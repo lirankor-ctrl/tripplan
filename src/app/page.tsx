@@ -77,7 +77,10 @@ export default function HomePage() {
             <Compass className="w-8 h-8 sm:w-10 sm:h-10 text-white/90" />
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">TripPlan</h1>
           </div>
-          <p className="text-white/80 text-sm sm:text-lg md:text-xl mb-5 sm:mb-8 max-w-md leading-relaxed">
+          <p className="font-serif-he hero-fade-in text-xl sm:text-3xl md:text-4xl text-white font-light tracking-wide leading-snug mb-3 sm:mb-4 max-w-2xl drop-shadow-sm">
+            הופכים חלומות לתאריכים ביומן...
+          </p>
+          <p className="text-white/70 text-xs sm:text-sm md:text-base mb-5 sm:mb-8 max-w-md leading-relaxed">
             תכנן את הטיול המושלם שלך — טיסות, מלונות, מסעדות ועוד
           </p>
           <div className="flex items-center gap-3">

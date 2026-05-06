@@ -8,16 +8,18 @@ import { ImageUploader } from '@/components/ui/ImageUploader';
 interface RestaurantFormProps {
   tripId: string;
   initialData?: Partial<Restaurant>;
+  tripDefaultDate?: string;
   onSubmit: (data: Omit<Restaurant, 'id'>) => void;
   onCancel: () => void;
 }
 
-export function RestaurantForm({ tripId, initialData, onSubmit, onCancel }: RestaurantFormProps) {
+export function RestaurantForm({ tripId, initialData, tripDefaultDate, onSubmit, onCancel }: RestaurantFormProps) {
   const [form, setForm] = useState<Omit<Restaurant, 'id'>>({
     tripId,
     city: initialData?.city || '',
     name: initialData?.name || '',
-    date: initialData?.date || '',
+    // ?? (not ||) so editing an item with an explicitly empty date keeps it empty.
+    date: initialData?.date ?? tripDefaultDate ?? '',
     time: initialData?.time || '',
     location: initialData?.location || '',
     notes: initialData?.notes || '',

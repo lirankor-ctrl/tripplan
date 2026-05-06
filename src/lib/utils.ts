@@ -1,5 +1,6 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { Flight, Trip } from './types';
 
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
@@ -10,6 +11,20 @@ export function formatDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+// Default date for new trip-item forms: earliest flight departure → trip start → today.
+// Returned as `yyyy-MM-dd` so it drops directly into <input type="date">.
+export function getTripDefaultDate(trip?: Trip | null, flights?: Flight[] | null): string {
+  if (flights && flights.length) {
+    const earliest = flights
+      .map(f => f.departureDate)
+      .filter((d): d is string => !!d)
+      .sort()[0];
+    if (earliest) return earliest;
+  }
+  if (trip?.startDate) return trip.startDate;
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 

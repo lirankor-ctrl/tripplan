@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Restaurant } from '@/lib/types';
-import { restaurantsStorage } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import { Flight, Restaurant, Trip } from '@/lib/types';
+import { flightsStorage, restaurantsStorage, tripsStorage } from '@/lib/storage';
+import { formatDate, getTripDefaultDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -14,6 +14,8 @@ import { Plus, UtensilsCrossed, Pencil, Trash2, MapPin, Clock, ExternalLink } fr
 export default function RestaurantsPage() {
   const { id } = useParams<{ id: string }>();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [flights, setFlights] = useState<Flight[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<Restaurant | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -21,8 +23,12 @@ export default function RestaurantsPage() {
   useEffect(() => {
     let cancelled = false;
     restaurantsStorage.getByTrip(id).then(items => { if (!cancelled) setRestaurants(items); });
+    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
+    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
     return () => { cancelled = true; };
   }, [id]);
+
+  const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
 
   const handleAdd = async (data: Omit<Restaurant, 'id'>) => {
     const r = await restaurantsStorage.create(data);
@@ -117,7 +123,7 @@ export default function RestaurantsPage() {
       )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף מסעדה">
-        <RestaurantForm tripId={id} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
+        <RestaurantForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
       <Modal isOpen={!!editItem} onClose={() => setEditItem(null)} title="עריכת מסעדה">
         {editItem && <RestaurantForm tripId={id} initialData={editItem} onSubmit={handleEdit} onCancel={() => setEditItem(null)} />}

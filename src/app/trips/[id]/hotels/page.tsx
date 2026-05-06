@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Hotel } from '@/lib/types';
-import { hotelsStorage } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import { Flight, Hotel, Trip } from '@/lib/types';
+import { flightsStorage, hotelsStorage, tripsStorage } from '@/lib/storage';
+import { formatDate, getTripDefaultDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -14,6 +14,8 @@ import { Plus, Hotel as HotelIcon, Pencil, Trash2, MapPin, Calendar } from 'luci
 export default function HotelsPage() {
   const { id } = useParams<{ id: string }>();
   const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [flights, setFlights] = useState<Flight[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editHotel, setEditHotel] = useState<Hotel | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -21,8 +23,12 @@ export default function HotelsPage() {
   useEffect(() => {
     let cancelled = false;
     hotelsStorage.getByTrip(id).then(items => { if (!cancelled) setHotels(items); });
+    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
+    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
     return () => { cancelled = true; };
   }, [id]);
+
+  const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
 
   const handleAdd = async (data: Omit<Hotel, 'id'>) => {
     const h = await hotelsStorage.create(data);
@@ -114,7 +120,7 @@ export default function HotelsPage() {
       )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף מלון">
-        <HotelForm tripId={id} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
+        <HotelForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
       <Modal isOpen={!!editHotel} onClose={() => setEditHotel(null)} title="עריכת מלון">
         {editHotel && <HotelForm tripId={id} initialData={editHotel} onSubmit={handleEdit} onCancel={() => setEditHotel(null)} />}

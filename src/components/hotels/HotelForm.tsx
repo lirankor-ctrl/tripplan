@@ -7,17 +7,19 @@ import { Input, Textarea } from '@/components/ui/Input';
 interface HotelFormProps {
   tripId: string;
   initialData?: Partial<Hotel>;
+  tripDefaultDate?: string;
   onSubmit: (data: Omit<Hotel, 'id'>) => void;
   onCancel: () => void;
 }
 
-export function HotelForm({ tripId, initialData, onSubmit, onCancel }: HotelFormProps) {
+export function HotelForm({ tripId, initialData, tripDefaultDate, onSubmit, onCancel }: HotelFormProps) {
   const [form, setForm] = useState<Omit<Hotel, 'id'>>({
     tripId,
     city: initialData?.city || '',
     hotelName: initialData?.hotelName || '',
-    arrivalDate: initialData?.arrivalDate || '',
-    departureDate: initialData?.departureDate || '',
+    // ?? (not ||) so editing a hotel saved without dates keeps them empty.
+    arrivalDate: initialData?.arrivalDate ?? tripDefaultDate ?? '',
+    departureDate: initialData?.departureDate ?? tripDefaultDate ?? '',
     notes: initialData?.notes || '',
     price: initialData?.price || '',
   });

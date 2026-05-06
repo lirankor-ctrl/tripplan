@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Noto+Sans+Hebrew:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full bg-gray-50 overflow-x-hidden" style={{ fontFamily: "'Noto Sans Hebrew', 'Segoe UI', system-ui, sans-serif" }}>
         <AuthProvider>{children}</AuthProvider>

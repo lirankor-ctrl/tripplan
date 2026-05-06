@@ -42,6 +42,24 @@ input[type="time"] {
   text-align: right;
 }
 
+/* Elegant Hebrew serif for emotional headline copy (hero tagline). */
+.font-serif-he {
+  font-family: 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif;
+}
+
+@keyframes hero-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-fade-in {
+  animation: hero-fade-in 1.1s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-in { animation: none; }
+}
+
 /* Safe-area utilities for notched phones (iPhone, etc.) */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

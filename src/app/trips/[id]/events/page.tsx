@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Event } from '@/lib/types';
-import { eventsStorage } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import { Event, Flight, Trip } from '@/lib/types';
+import { eventsStorage, flightsStorage, tripsStorage } from '@/lib/storage';
+import { formatDate, getTripDefaultDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -14,6 +14,8 @@ import { Plus, Music, Pencil, Trash2, MapPin, Clock, ExternalLink } from 'lucide
 export default function EventsPage() {
   const { id } = useParams<{ id: string }>();
   const [events, setEvents] = useState<Event[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [flights, setFlights] = useState<Flight[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -21,8 +23,12 @@ export default function EventsPage() {
   useEffect(() => {
     let cancelled = false;
     eventsStorage.getByTrip(id).then(items => { if (!cancelled) setEvents(items); });
+    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
+    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
     return () => { cancelled = true; };
   }, [id]);
+
+  const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
 
   const handleAdd = async (data: Omit<Event, 'id'>) => {
     const e = await eventsStorage.create(data);
@@ -116,7 +122,7 @@ export default function EventsPage() {
       )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף אירוע">
-        <EventForm tripId={id} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
+        <EventForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
       <Modal isOpen={!!editItem} onClose={() => setEditItem(null)} title="עריכת אירוע">
         {editItem && <EventForm tripId={id} initialData={editItem} onSubmit={handleEdit} onCancel={() => setEditItem(null)} />}

@@ -7,18 +7,20 @@ import { Input, Select } from '@/components/ui/Input';
 interface FlightFormProps {
   tripId: string;
   initialData?: Partial<Flight>;
+  tripDefaultDate?: string;
   onSubmit: (data: Omit<Flight, 'id'>) => void;
   onCancel: () => void;
 }
 
-export function FlightForm({ tripId, initialData, onSubmit, onCancel }: FlightFormProps) {
+export function FlightForm({ tripId, initialData, tripDefaultDate, onSubmit, onCancel }: FlightFormProps) {
   const [form, setForm] = useState<Omit<Flight, 'id'>>({
     tripId,
     type: (initialData?.type as FlightType) || 'international',
     airline: initialData?.airline || '',
     departureAirport: initialData?.departureAirport || '',
     arrivalAirport: initialData?.arrivalAirport || '',
-    departureDate: initialData?.departureDate || '',
+    // ?? (not ||) so editing a flight with an explicitly empty date keeps it empty.
+    departureDate: initialData?.departureDate ?? tripDefaultDate ?? '',
     departureTime: initialData?.departureTime || '',
     price: initialData?.price || '',
   });

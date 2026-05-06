@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Flight } from '@/lib/types';
-import { flightsStorage } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import { Flight, Trip } from '@/lib/types';
+import { flightsStorage, tripsStorage } from '@/lib/storage';
+import { formatDate, getTripDefaultDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -73,6 +73,7 @@ function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () =
 export default function FlightsPage() {
   const { id } = useParams<{ id: string }>();
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [editFlight, setEditFlight] = useState<Flight | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -80,8 +81,11 @@ export default function FlightsPage() {
   useEffect(() => {
     let cancelled = false;
     flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
+    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
     return () => { cancelled = true; };
   }, [id]);
+
+  const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
 
   const handleAdd = async (data: Omit<Flight, 'id'>) => {
     const f = await flightsStorage.create(data);
@@ -139,7 +143,7 @@ export default function FlightsPage() {
       )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף טיסה">
-        <FlightForm tripId={id} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
+        <FlightForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
 
       <Modal isOpen={!!editFlight} onClose={() => setEditFlight(null)} title="עריכת טיסה">
