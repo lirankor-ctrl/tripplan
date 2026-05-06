@@ -192,6 +192,14 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
     [dateRange],
   );
 
+  // Chunk into 7-day weeks so each row can carry `break-inside: avoid` and
+  // never get split across two printed pages.
+  const weeks = useMemo(() => {
+    const out: GridDay[][] = [];
+    for (let i = 0; i < gridDays.length; i += 7) out.push(gridDays.slice(i, i + 7));
+    return out;
+  }, [gridDays]);
+
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     calendarEvents.forEach(e => {
@@ -217,8 +225,8 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
 
   return (
     <div dir="rtl">
-      {/* Desktop / Print grid */}
-      <div className={cn(printMode ? 'block' : 'hidden md:block')}>
+      {/* Desktop / Print grid — always visible when printing, regardless of viewport. */}
+      <div className={cn(printMode ? 'block' : 'hidden md:block print:block')}>
         {/* Day-of-week header */}
         <div className="grid grid-cols-7 gap-1.5 mb-1.5">
           {DAY_NAMES.map(name => (
@@ -228,63 +236,67 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
           ))}
         </div>
 
-        {/* Day cells */}
-        <div className="grid grid-cols-7 gap-1.5">
-          {gridDays.map(({ day, inRange }) => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const dayEvents = eventsByDate[dateStr] ?? [];
-            const today = isToday(day);
-            const active = today && inRange;
+        {/* Week rows — each row keeps its 7 cells together when printing. */}
+        <div className="space-y-1.5">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 gap-1.5 calendar-week">
+              {week.map(({ day, inRange }) => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const dayEvents = eventsByDate[dateStr] ?? [];
+                const today = isToday(day);
+                const active = today && inRange;
 
-            return (
-              <div
-                key={dateStr}
-                className={cn(
-                  'calendar-day min-h-[110px] rounded-xl border overflow-hidden transition-opacity',
-                  inRange ? 'bg-white' : 'bg-gray-50 opacity-35',
-                  active ? 'border-indigo-300 ring-1 ring-indigo-200' : 'border-gray-100',
-                )}
-              >
-                {/* Date header */}
-                <div className={cn(
-                  'px-2 py-1 text-center border-b',
-                  active ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-50 border-gray-100',
-                )}>
-                  <div className={cn(
-                    'text-base font-bold leading-tight',
-                    active ? 'text-white' : inRange ? 'text-gray-800' : 'text-gray-300',
-                  )}>
-                    {format(day, 'd')}
-                  </div>
-                  <div className={cn(
-                    'text-xs',
-                    active ? 'text-indigo-200' : 'text-gray-400',
-                  )}>
-                    {format(day, 'MMM', { locale: he })}
-                  </div>
-                </div>
+                return (
+                  <div
+                    key={dateStr}
+                    className={cn(
+                      'calendar-day min-h-[110px] rounded-xl border overflow-hidden transition-opacity',
+                      inRange ? 'bg-white' : 'bg-gray-50 opacity-35',
+                      active ? 'border-indigo-300 ring-1 ring-indigo-200' : 'border-gray-100',
+                    )}
+                  >
+                    {/* Date header */}
+                    <div className={cn(
+                      'px-2 py-1 text-center border-b',
+                      active ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-50 border-gray-100',
+                    )}>
+                      <div className={cn(
+                        'text-base font-bold leading-tight',
+                        active ? 'text-white' : inRange ? 'text-gray-800' : 'text-gray-300',
+                      )}>
+                        {format(day, 'd')}
+                      </div>
+                      <div className={cn(
+                        'text-xs',
+                        active ? 'text-indigo-200' : 'text-gray-400',
+                      )}>
+                        {format(day, 'MMM', { locale: he })}
+                      </div>
+                    </div>
 
-                {/* Events (only for in-range days) */}
-                {inRange && (
-                  <div className="p-1 space-y-0.5">
-                    {dayEvents.map(evt => (
-                      <EventChip
-                        key={evt.id}
-                        evt={evt}
-                        onClick={printMode ? undefined : () => setSelectedEvent(evt)}
-                      />
-                    ))}
+                    {/* Events (only for in-range days) */}
+                    {inRange && (
+                      <div className="p-1 space-y-0.5">
+                        {dayEvents.map(evt => (
+                          <EventChip
+                            key={evt.id}
+                            evt={evt}
+                            onClick={printMode ? undefined : () => setSelectedEvent(evt)}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Mobile: vertical list (in-range days only) */}
+      {/* Mobile: vertical list (in-range days only) — hidden when printing. */}
       {!printMode && (
-        <div className="md:hidden space-y-2">
+        <div className="md:hidden print:hidden space-y-2">
           {gridDays.filter(d => d.inRange).map(({ day }) => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const dayEvents = eventsByDate[dateStr] ?? [];

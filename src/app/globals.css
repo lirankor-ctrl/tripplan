@@ -79,8 +79,19 @@ input[type="time"] {
   }
 }
 
+/* Visibility utilities to swap content between screen and print. */
+.print-only { display: none; }
+.screen-only { display: block; }
+
 /* Print styles */
 @media print {
+  /* Preserve coloured chips/badges/backgrounds when printing. Without these,
+     most browsers strip backgrounds and we lose all visual category coding. */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Hide everything that isn't the printable content */
   .no-print,
   nav,
@@ -88,6 +99,13 @@ input[type="time"] {
   header {
     display: none !important;
   }
+
+  .print-only { display: block !important; }
+  .screen-only { display: none !important; }
+
+  /* Mode toggles: when the user picks one print mode, hide the other target. */
+  body.print-mode-calendar [data-print-target="summary"] { display: none !important; }
+  body.print-mode-summary [data-print-target="calendar"] { display: none !important; }
 
   body {
     background: white;
@@ -104,6 +122,12 @@ input[type="time"] {
 
   /* Avoid page breaks inside cards */
   section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Whole Sun–Sat row stays together when paginated. */
+  .calendar-week {
     break-inside: avoid;
     page-break-inside: avoid;
   }

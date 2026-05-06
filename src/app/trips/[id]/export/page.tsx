@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/utils';
 import { TripCalendar } from '@/components/calendar/TripCalendar';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/LoadingState';
+import { printWithMode } from '@/lib/print';
 import {
   Printer, Plane, Hotel as HotelIcon, UtensilsCrossed,
   Music, Package, FileText, MapPin, Calendar, Check,
@@ -75,25 +76,32 @@ export default function ExportPage() {
     <div dir="rtl">
       {/* Screen-only controls */}
       <div className="p-4 md:p-6 no-print border-b border-gray-100 bg-white sticky top-0 z-10">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900">ייצוא והדפסה</h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-0.5 hidden sm:block">
-              לחץ &quot;הדפס&quot; כדי לשמור כ-PDF או להדפיס
+              בחר את הפורמט הרצוי — סיכום טקסטואלי או לוח שנה חזותי
             </p>
           </div>
-          <Button onClick={() => window.print()} size="md" className="flex-shrink-0" aria-label="הדפס / שמור כ-PDF">
-            <Printer className="w-5 h-5" />
-            <span className="hidden sm:inline">הדפס / שמור כ-PDF</span>
-            <span className="sm:hidden">הדפס</span>
-          </Button>
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            <Button variant="secondary" onClick={() => printWithMode('summary')} size="md" aria-label="הדפס סיכום טקסטואלי">
+              <FileText className="w-4 h-4" />
+              <span>הדפס סיכום טקסטואלי</span>
+            </Button>
+            <Button onClick={() => printWithMode('calendar')} size="md" aria-label="הדפס לוח שנה חזותי">
+              <Calendar className="w-4 h-4" />
+              <span>הדפס לוח שנה חזותי</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Printable summary */}
+      {/* Printable content. The two top-level wrappers are tagged with
+          data-print-target so globals.css can show one and hide the other
+          based on the body class set by printWithMode(). */}
       <div className="px-4 md:px-8 pb-12 max-w-4xl mx-auto">
 
-        {/* Trip header */}
+        {/* Trip header — visible in BOTH print modes (no data-print-target). */}
         <div className="text-center py-8 mb-6 border-b border-gray-200">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{trip.name}</h1>
           {trip.destination && (
@@ -110,6 +118,9 @@ export default function ExportPage() {
             </p>
           )}
         </div>
+
+        {/* Textual summary — hidden when printing the visual calendar. */}
+        <div data-print-target="summary">
 
         {/* Flights */}
         {flights.length > 0 && (
@@ -225,8 +236,10 @@ export default function ExportPage() {
           </section>
         )}
 
-        {/* Calendar */}
-        <section className="mb-8">
+        </div>{/* /data-print-target="summary" */}
+
+        {/* Visual calendar — hidden when printing the textual summary. */}
+        <section data-print-target="calendar" className="mb-8">
           <SectionTitle icon={Calendar} title="לוח שנה" colorClass="border-indigo-400 text-indigo-700" />
           <TripCalendar
             flights={flights}
