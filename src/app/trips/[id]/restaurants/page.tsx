@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { RestaurantForm } from '@/components/restaurants/RestaurantForm';
 import { Plus, UtensilsCrossed, Pencil, Trash2, MapPin, Clock, ExternalLink } from 'lucide-react';
 
@@ -16,15 +17,29 @@ export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<Restaurant | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    restaurantsStorage.getByTrip(id).then(items => { if (!cancelled) setRestaurants(items); });
-    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
-    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
+    setLoading(true);
+    (async () => {
+      try {
+        const [items, t, f] = await Promise.all([
+          restaurantsStorage.getByTrip(id),
+          tripsStorage.getById(id),
+          flightsStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setRestaurants(items);
+        setTrip(t ?? null);
+        setFlights(f);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -58,7 +73,9 @@ export default function RestaurantsPage() {
         </Button>
       </div>
 
-      {restaurants.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : restaurants.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
           title="אין מסעדות עדיין"

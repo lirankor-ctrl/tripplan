@@ -9,6 +9,7 @@ import {
 import { formatDate } from '@/lib/utils';
 import { TripCalendar } from '@/components/calendar/TripCalendar';
 import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/ui/LoadingState';
 import {
   Printer, Plane, Hotel as HotelIcon, UtensilsCrossed,
   Music, Package, FileText, MapPin, Calendar, Check,
@@ -36,31 +37,38 @@ export default function ExportPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [packing, setPacking] = useState<PackingItem[]>([]);
   const [notes, setNotes] = useState<TripNote | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
-      const [t, f, h, r, e, p, n] = await Promise.all([
-        tripsStorage.getById(id),
-        flightsStorage.getByTrip(id),
-        hotelsStorage.getByTrip(id),
-        restaurantsStorage.getByTrip(id),
-        eventsStorage.getByTrip(id),
-        packingStorage.getByTrip(id),
-        notesStorage.getByTrip(id),
-      ]);
-      if (cancelled || !t) return;
-      setTrip(t);
-      setFlights(f);
-      setHotels(h);
-      setRestaurants(r);
-      setEvents(e);
-      setPacking(p);
-      setNotes(n ?? null);
+      try {
+        const [t, f, h, r, e, p, n] = await Promise.all([
+          tripsStorage.getById(id),
+          flightsStorage.getByTrip(id),
+          hotelsStorage.getByTrip(id),
+          restaurantsStorage.getByTrip(id),
+          eventsStorage.getByTrip(id),
+          packingStorage.getByTrip(id),
+          notesStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setTrip(t ?? null);
+        setFlights(f);
+        setHotels(h);
+        setRestaurants(r);
+        setEvents(e);
+        setPacking(p);
+        setNotes(n ?? null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [id]);
 
+  if (loading) return <LoadingState />;
   if (!trip) return null;
 
   return (

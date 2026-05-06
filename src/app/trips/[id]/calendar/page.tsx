@@ -5,6 +5,7 @@ import { Flight, Hotel, Restaurant, Event } from '@/lib/types';
 import { flightsStorage, hotelsStorage, restaurantsStorage, eventsStorage } from '@/lib/storage';
 import { TripCalendar } from '@/components/calendar/TripCalendar';
 import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Printer } from 'lucide-react';
 
 export default function CalendarPage() {
@@ -13,18 +14,24 @@ export default function CalendarPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
-      const [f, h, r, e] = await Promise.all([
-        flightsStorage.getByTrip(id),
-        hotelsStorage.getByTrip(id),
-        restaurantsStorage.getByTrip(id),
-        eventsStorage.getByTrip(id),
-      ]);
-      if (cancelled) return;
-      setFlights(f); setHotels(h); setRestaurants(r); setEvents(e);
+      try {
+        const [f, h, r, e] = await Promise.all([
+          flightsStorage.getByTrip(id),
+          hotelsStorage.getByTrip(id),
+          restaurantsStorage.getByTrip(id),
+          eventsStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setFlights(f); setHotels(h); setRestaurants(r); setEvents(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [id]);
@@ -39,12 +46,16 @@ export default function CalendarPage() {
         </Button>
       </div>
 
-      <TripCalendar
-        flights={flights}
-        hotels={hotels}
-        restaurants={restaurants}
-        events={events}
-      />
+      {loading ? (
+        <LoadingState />
+      ) : (
+        <TripCalendar
+          flights={flights}
+          hotels={hotels}
+          restaurants={restaurants}
+          events={events}
+        />
+      )}
     </div>
   );
 }

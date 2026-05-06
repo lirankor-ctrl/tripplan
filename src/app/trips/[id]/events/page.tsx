@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { EventForm } from '@/components/events/EventForm';
 import { Plus, Music, Pencil, Trash2, MapPin, Clock, ExternalLink } from 'lucide-react';
 
@@ -16,15 +17,29 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    eventsStorage.getByTrip(id).then(items => { if (!cancelled) setEvents(items); });
-    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
-    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
+    setLoading(true);
+    (async () => {
+      try {
+        const [items, t, f] = await Promise.all([
+          eventsStorage.getByTrip(id),
+          tripsStorage.getById(id),
+          flightsStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setEvents(items);
+        setTrip(t ?? null);
+        setFlights(f);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -58,7 +73,9 @@ export default function EventsPage() {
         </Button>
       </div>
 
-      {events.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : events.length === 0 ? (
         <EmptyState
           icon={Music}
           title="אין אירועים עדיין"

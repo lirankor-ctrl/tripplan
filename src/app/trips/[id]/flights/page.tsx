@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Badge } from '@/components/ui/Badge';
 import { FlightForm } from '@/components/flights/FlightForm';
 import { Plus, Plane, Pencil, Trash2 } from 'lucide-react';
@@ -74,14 +75,27 @@ export default function FlightsPage() {
   const { id } = useParams<{ id: string }>();
   const [flights, setFlights] = useState<Flight[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editFlight, setEditFlight] = useState<Flight | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
-    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
+    setLoading(true);
+    (async () => {
+      try {
+        const [items, t] = await Promise.all([
+          flightsStorage.getByTrip(id),
+          tripsStorage.getById(id),
+        ]);
+        if (cancelled) return;
+        setFlights(items);
+        setTrip(t ?? null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -117,7 +131,9 @@ export default function FlightsPage() {
         </Button>
       </div>
 
-      {flights.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : flights.length === 0 ? (
         <EmptyState
           icon={Plane}
           title="אין טיסות עדיין"

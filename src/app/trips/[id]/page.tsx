@@ -8,6 +8,7 @@ import {
 } from '@/lib/storage';
 import { formatDate } from '@/lib/utils';
 import { Card, CardBody } from '@/components/ui/Card';
+import { LoadingState } from '@/components/ui/LoadingState';
 import Link from 'next/link';
 import {
   Plane, Hotel, UtensilsCrossed, Music, Package,
@@ -35,33 +36,39 @@ export default function TripDashboard() {
   const [stats, setStats] = useState({
     flights: 0, hotels: 0, restaurants: 0, events: 0, packing: 0, packingDone: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
-      const [t, flights, hotels, restaurants, events, packingItems] = await Promise.all([
-        tripsStorage.getById(id),
-        flightsStorage.getByTrip(id),
-        hotelsStorage.getByTrip(id),
-        restaurantsStorage.getByTrip(id),
-        eventsStorage.getByTrip(id),
-        packingStorage.getByTrip(id),
-      ]);
-      if (cancelled) return;
-      if (!t) return;
-      setTrip(t);
-      setStats({
-        flights: flights.length,
-        hotels: hotels.length,
-        restaurants: restaurants.length,
-        events: events.length,
-        packing: packingItems.length,
-        packingDone: packingItems.filter(p => p.isDone).length,
-      });
+      try {
+        const [t, flights, hotels, restaurants, events, packingItems] = await Promise.all([
+          tripsStorage.getById(id),
+          flightsStorage.getByTrip(id),
+          hotelsStorage.getByTrip(id),
+          restaurantsStorage.getByTrip(id),
+          eventsStorage.getByTrip(id),
+          packingStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setTrip(t ?? null);
+        setStats({
+          flights: flights.length,
+          hotels: hotels.length,
+          restaurants: restaurants.length,
+          events: events.length,
+          packing: packingItems.length,
+          packingDone: packingItems.filter(p => p.isDone).length,
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [id]);
 
+  if (loading) return <LoadingState />;
   if (!trip) return null;
 
   return (

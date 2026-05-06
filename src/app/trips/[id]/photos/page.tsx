@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { Camera, Plus, Trash2, Pencil, X, ZoomIn } from 'lucide-react';
 
@@ -59,13 +60,17 @@ function PhotoForm({ onSubmit, onCancel }: {
 export default function PhotosPage() {
   const { id } = useParams<{ id: string }>();
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const [editCaption, setEditCaption] = useState<{ id: string; caption: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    photosStorage.getByTrip(id).then(items => { if (!cancelled) setPhotos(items); });
+    setLoading(true);
+    photosStorage.getByTrip(id)
+      .then(items => { if (!cancelled) setPhotos(items); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -107,7 +112,9 @@ export default function PhotosPage() {
         </Button>
       </div>
 
-      {photos.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : photos.length === 0 ? (
         <EmptyState
           icon={Camera}
           title="האלבום ריק"

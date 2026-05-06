@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { notesStorage } from '@/lib/storage';
-import { Save, Check } from 'lucide-react';
+import { Loader2, Save, Check } from 'lucide-react';
 
 export default function NotesPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,16 +10,25 @@ export default function NotesPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // loading is true until the saved note has been fetched. We disable the
+  // textarea so the user can't type into a void and have their input
+  // clobbered when the saved content arrives.
+  const [loading, setLoading] = useState(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRef = useRef<((text: string) => void) | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    notesStorage.getByTrip(id).then(note => {
-      if (cancelled || !note) return;
-      setContent(note.content);
-      setSavedAt(note.updatedAt);
-    });
+    setLoading(true);
+    notesStorage.getByTrip(id)
+      .then(note => {
+        if (cancelled) return;
+        if (note) {
+          setContent(note.content);
+          setSavedAt(note.updatedAt);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -51,19 +60,25 @@ export default function NotesPage() {
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">הערות</h1>
         <div className="flex items-center gap-1.5 text-xs text-gray-400 h-6">
-          {saving && (
+          {loading && (
+            <span className="flex items-center gap-1 text-indigo-400">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              טוען נתונים...
+            </span>
+          )}
+          {!loading && saving && (
             <span className="flex items-center gap-1 text-indigo-400 animate-pulse">
               <Save className="w-3.5 h-3.5" />
               שומר...
             </span>
           )}
-          {!saving && justSaved && (
+          {!loading && !saving && justSaved && (
             <span className="flex items-center gap-1 text-green-500">
               <Check className="w-3.5 h-3.5" />
               נשמר
             </span>
           )}
-          {!saving && !justSaved && savedAt && (
+          {!loading && !saving && !justSaved && savedAt && (
             <span className="text-gray-400">
               עודכן {new Date(savedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
             </span>
@@ -76,14 +91,15 @@ export default function NotesPage() {
           dir="rtl"
           value={content}
           onChange={e => handleChange(e.target.value)}
-          placeholder={`כתוב כאן הערות חופשיות, תזכורות, רעיונות ומידע חשוב...
+          disabled={loading}
+          placeholder={loading ? 'טוען נתונים...' : `כתוב כאן הערות חופשיות, תזכורות, רעיונות ומידע חשוב...
 
 • מספרי טלפון חשובים
 • כתובות
 • המלצות של חברים
 • שעות פתיחה
 • כל מה שתרצה לזכור`}
-          className="flex-1 w-full p-4 md:p-6 text-gray-800 placeholder:text-gray-300 text-base leading-7 resize-none focus:outline-none bg-transparent min-h-[55dvh] md:min-h-[65vh]"
+          className="flex-1 w-full p-4 md:p-6 text-gray-800 placeholder:text-gray-300 text-base leading-7 resize-none focus:outline-none bg-transparent min-h-[55dvh] md:min-h-[65vh] disabled:cursor-wait"
           style={{ direction: 'rtl' }}
         />
       </div>

@@ -8,6 +8,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { Package, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -57,13 +58,17 @@ function PackingItemForm({ initialData, tripId, onSubmit, onCancel }: {
 export default function PackingPage() {
   const { id } = useParams<{ id: string }>();
   const [items, setItems] = useState<PackingItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<PackingItem | null>(null);
   const [filter, setFilter] = useState<'all' | 'done' | 'pending'>('all');
 
   useEffect(() => {
     let cancelled = false;
-    packingStorage.getByTrip(id).then(items => { if (!cancelled) setItems(items); });
+    setLoading(true);
+    packingStorage.getByTrip(id)
+      .then(items => { if (!cancelled) setItems(items); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -114,7 +119,9 @@ export default function PackingPage() {
         </Button>
       </div>
 
-      {items.length > 0 && (
+      {loading && <LoadingState />}
+
+      {!loading && items.length > 0 && (
         <Card className="mb-6">
           <CardBody className="p-5">
             <div className="flex items-center justify-between mb-3">
@@ -145,14 +152,14 @@ export default function PackingPage() {
         </Card>
       )}
 
-      {items.length === 0 ? (
+      {!loading && items.length === 0 ? (
         <EmptyState
           icon={Package}
           title="רשימת האריזה ריקה"
           description="הוסף פריטים לאריזה לפני הטיול"
           action={<Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" />הוסף פריט</Button>}
         />
-      ) : (
+      ) : !loading && (
         <div className="space-y-5">
           {Object.entries(grouped).map(([category, catItems]) => (
             <div key={category}>

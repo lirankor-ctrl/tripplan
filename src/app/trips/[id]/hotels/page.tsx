@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { HotelForm } from '@/components/hotels/HotelForm';
 import { Plus, Hotel as HotelIcon, Pencil, Trash2, MapPin, Calendar } from 'lucide-react';
 
@@ -16,15 +17,29 @@ export default function HotelsPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editHotel, setEditHotel] = useState<Hotel | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    hotelsStorage.getByTrip(id).then(items => { if (!cancelled) setHotels(items); });
-    tripsStorage.getById(id).then(t => { if (!cancelled) setTrip(t ?? null); });
-    flightsStorage.getByTrip(id).then(items => { if (!cancelled) setFlights(items); });
+    setLoading(true);
+    (async () => {
+      try {
+        const [items, t, f] = await Promise.all([
+          hotelsStorage.getByTrip(id),
+          tripsStorage.getById(id),
+          flightsStorage.getByTrip(id),
+        ]);
+        if (cancelled) return;
+        setHotels(items);
+        setTrip(t ?? null);
+        setFlights(f);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [id]);
 
@@ -60,7 +75,9 @@ export default function HotelsPage() {
         </Button>
       </div>
 
-      {hotels.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : hotels.length === 0 ? (
         <EmptyState
           icon={HotelIcon}
           title="אין מלונות עדיין"
