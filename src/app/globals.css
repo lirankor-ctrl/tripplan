@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fb;
+  --foreground: #1a1a2e;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Noto Sans Hebrew', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  direction: rtl;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent iOS Safari from zooming when focusing inputs whose font-size < 16px.
+   We keep the visual size small via Tailwind text-sm but bump form fields to 16px on phones. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Custom scrollbar (desktop only) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+}
+
+/* Force LTR direction for date/time inputs so the value renders correctly */
+input[type="date"],
+input[type="time"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* Safe-area utilities for notched phones (iPhone, etc.) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* Larger tap targets on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide everything that isn't the printable content */
+  .no-print,
+  nav,
+  aside,
+  header {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    direction: rtl;
+    font-size: 12pt;
+    overflow: visible;
+  }
+
+  /* Ensure the main content takes the full page */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Avoid page breaks inside cards */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Calendar cells should not break across pages */
+  .calendar-day {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  * {
+    box-shadow: none !important;
+  }
 }

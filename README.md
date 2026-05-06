@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TripPlan
 
-## Getting Started
+מתכנן טיולים בעברית — Hebrew/RTL trip planner with mobile-first UI and optional Supabase sync.
 
-First, run the development server:
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs out of the box with **localStorage**. Auth + cross-device sync require Supabase setup (below).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase setup (optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app is fully functional without Supabase. Add it when you want accounts and cross-device sync.
 
-## Learn More
+### 1. Create a Supabase project
 
-To learn more about Next.js, take a look at the following resources:
+Go to [supabase.com](https://supabase.com), create a project, and copy the **Project URL** and **anon public key** from *Project Settings → API*.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Add environment variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Create `.env.local` in the project root:
 
-## Deploy on Vercel
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Restart `npm run dev` after editing `.env.local`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Run the schema
+
+Open the Supabase dashboard → **SQL Editor** → **New query**, paste the contents of `supabase/schema.sql`, and run it.
+
+This creates: `profiles`, `trips`, `flights`, `hotels`, `restaurants`, `events`, `packing_items`, `photos`, `trip_notes`. Each table has Row Level Security so users can only read/write their own rows.
+
+### 4. (Optional) Disable email confirmation for local testing
+
+In *Authentication → Providers → Email*, turn off **Confirm email** if you want signups to log in immediately without clicking a confirmation link.
+
+## What got built
+
+- **Mobile-first UI**: viewport meta tag, safe-area insets for notched phones, 44px touch targets, iOS-zoom-prevention on inputs, mobile camera capture in the photo uploader, bottom-sheet modals on small screens, vertical card stacking, dedicated mobile lightbox controls.
+- **Auth (Supabase)**: signup, login, forgot password, reset password, logout, session-cookie middleware (Next 16 calls it *Proxy*) that protects every non-public page. Hebrew UI throughout: הרשמה / התחברות / התנתקות / שכחת סיסמה.
+- **Hybrid storage**: when Supabase is configured *and* the user is signed in, all data goes to Postgres. Otherwise the existing localStorage path is used. The same call sites work in both modes.
+- **One-shot migration**: a banner on the homepage offers to upload existing localStorage data to the cloud the first time a user signs in.
+
+## Testing
+
+### Auth flow
+1. Open `/signup`, register with email + password.
+2. If email confirmation is enabled, click the link in your inbox; otherwise you're logged in straight away.
+3. Visit `/`, create a trip — it lands in the cloud (`select * from trips` confirms it).
+4. Sign out from the user menu (top-left of the homepage hero), then sign in again on a different device with the same email.
+
+### Mobile
+- Chrome DevTools → device toolbar → iPhone 14 Pro / Pixel 8.
+- Or open the network IP shown by `npm run dev` (e.g. `http://192.168.1.x:3000`) on your phone over the same Wi-Fi.
+- Verify: no horizontal scroll, hero fits without zooming out, bottom nav is reachable, photo uploader exposes both "מצלמה" and "גלריה" buttons.
+
+## Tech
+
+- Next.js 16 (Turbopack, App Router, `proxy.ts` for middleware)
+- React 19
+- Tailwind CSS v4
+- Supabase JS + `@supabase/ssr` for server-side cookie handling
+- date-fns / lucide-react
+
+## Structure
+
+```
+src/
+  app/
+    (auth)/             login, signup, forgot-password, reset-password
+    auth/callback/      OAuth + email confirmation handler
+    trips/[id]/         dashboard + 9 sub-pages
+    page.tsx            home (trip list)
+    layout.tsx          AuthProvider mounts here
+  components/
+    auth/               AuthProvider, UserMenu, MigrateLocalDataBanner, AuthCard
+    ui/                 Button, Input, Modal, Card, ImageUploader, ...
+    calendar/           TripCalendar (with mobile list view)
+    flights/, hotels/, restaurants/, events/, trips/  forms
+    TripSidebar.tsx     desktop sidebar + mobile bottom nav
+  lib/
+    storage.ts          hybrid Supabase ↔ localStorage layer
+    supabase/           client.ts (browser), server.ts (RSC), config.ts (env)
+    types.ts, utils.ts, image.ts
+  proxy.ts              Next 16 middleware — gates protected routes
+supabase/
+  schema.sql            tables + RLS policies (paste into Supabase SQL editor)
+```
