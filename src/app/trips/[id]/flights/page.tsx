@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Flight, Trip } from '@/lib/types';
 import { flightsStorage, tripsStorage } from '@/lib/storage';
-import { formatDate, getTripDefaultDate } from '@/lib/utils';
+import { formatDate, getTripDefaultDate, sortFlightsForDisplay } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -100,6 +100,7 @@ export default function FlightsPage() {
   }, [id]);
 
   const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
+  const sortedFlights = useMemo(() => sortFlightsForDisplay(flights), [flights]);
 
   const handleAdd = async (data: Omit<Flight, 'id'>) => {
     const f = await flightsStorage.create(data);
@@ -147,7 +148,7 @@ export default function FlightsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {flights.map(f => (
+          {sortedFlights.map(f => (
             <FlightCard
               key={f.id}
               flight={f}

@@ -27,6 +27,23 @@ export function getTripDefaultDate(trip?: Trip | null, flights?: Flight[] | null
   return format(new Date(), 'yyyy-MM-dd');
 }
 
+// Display order for the flights list (and printable summary). Internal vs
+// international are NOT separated — they share one chronological list.
+//   1. Flights with no date come first (still being planned).
+//   2. Dated flights follow, earliest → latest.
+//   3. Same-date flights tiebreak on departureTime when present.
+// Pure: returns a new array, leaves the input untouched.
+export function sortFlightsForDisplay(flights: Flight[]): Flight[] {
+  const undated: Flight[] = [];
+  const dated: Flight[] = [];
+  for (const f of flights) (f.departureDate ? dated : undated).push(f);
+  dated.sort((a, b) => {
+    if (a.departureDate !== b.departureDate) return a.departureDate.localeCompare(b.departureDate);
+    return (a.departureTime || '').localeCompare(b.departureTime || '');
+  });
+  return [...undated, ...dated];
+}
+
 
 
 export function cn(...classes: (string | undefined | false | null)[]): string {

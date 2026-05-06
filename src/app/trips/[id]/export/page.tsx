@@ -6,7 +6,7 @@ import {
   tripsStorage, flightsStorage, hotelsStorage,
   restaurantsStorage, eventsStorage, packingStorage, notesStorage,
 } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import { formatDate, sortFlightsForDisplay } from '@/lib/utils';
 import { TripCalendar } from '@/components/calendar/TripCalendar';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -122,12 +122,12 @@ export default function ExportPage() {
         {/* Textual summary — hidden when printing the visual calendar. */}
         <div data-print-target="summary">
 
-        {/* Flights */}
+        {/* Flights — single chronological list, dateless first. */}
         {flights.length > 0 && (
           <section className="mb-8">
             <SectionTitle icon={Plane} title="טיסות" colorClass="border-blue-400 text-blue-700" />
             <div className="space-y-2">
-              {flights.map(f => (
+              {sortFlightsForDisplay(flights).map(f => (
                 <div key={f.id} className="flex flex-wrap items-center gap-3 p-3 bg-blue-50 rounded-xl text-sm">
                   <Plane className="w-4 h-4 text-blue-500 flex-shrink-0" />
                   <span className="font-bold text-blue-800">
