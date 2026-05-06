@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Flight, FlightType } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -8,7 +8,7 @@ interface FlightFormProps {
   tripId: string;
   initialData?: Partial<Flight>;
   tripDefaultDate?: string;
-  onSubmit: (data: Omit<Flight, 'id'>) => void;
+  onSubmit: (data: Omit<Flight, 'id'>) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -24,11 +24,26 @@ export function FlightForm({ tripId, initialData, tripDefaultDate, onSubmit, onC
     departureTime: initialData?.departureTime || '',
     price: initialData?.price || '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(form);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-4" dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <Select label="סוג טיסה" value={form.type} onChange={e => set('type', e.target.value)}>
         <option value="international">טיסה בינלאומית</option>
         <option value="internal">טיסה פנימית</option>
@@ -49,11 +64,11 @@ export function FlightForm({ tripId, initialData, tripDefaultDate, onSubmit, onC
       <Input label="מחיר (אופציונלי)" placeholder="₪" value={form.price || ''} onChange={e => set('price', e.target.value)} />
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => onSubmit(form)} className="flex-1">
-          {initialData?.airline !== undefined ? 'שמור שינויים' : 'הוסף טיסה'}
+        <Button type="submit" disabled={isSubmitting} className="flex-1">
+          {isSubmitting ? 'שומר...' : initialData?.airline !== undefined ? 'שמור שינויים' : 'הוסף טיסה'}
         </Button>
-        <Button variant="secondary" onClick={onCancel} className="flex-1">ביטול</Button>
+        <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} className="flex-1">ביטול</Button>
       </div>
-    </div>
+    </form>
   );
 }

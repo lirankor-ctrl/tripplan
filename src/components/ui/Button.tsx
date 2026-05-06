@@ -8,7 +8,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export function Button({ variant = 'primary', size = 'md', className, children, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', size = 'md', className, children, type, ...props }: ButtonProps) {
   const base = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
@@ -26,8 +26,10 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
     lg: 'text-base px-6 py-3 min-h-[48px]',
   };
 
+  // Default to type="button" — a bare <button> inside a <form> defaults to "submit"
+  // and would fire the form on every click. Explicit "submit" is opt-in per usage.
   return (
-    <button className={cn(base, variants[variant], sizes[size], className)} {...props}>
+    <button type={type ?? 'button'} className={cn(base, variants[variant], sizes[size], className)} {...props}>
       {children}
     </button>
   );

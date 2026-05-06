@@ -98,7 +98,21 @@ function buildCalendarEvents(
     }
   });
 
-  return items.sort((a, b) => {
+  // Final-defense dedup: even if storage returned duplicates, never render
+  // two chips for the same id, or for items with identical content.
+  const seenIds = new Set<string>();
+  const seenContent = new Set<string>();
+  const deduped: CalendarEvent[] = [];
+  for (const item of items) {
+    if (seenIds.has(item.id)) continue;
+    seenIds.add(item.id);
+    const contentKey = [item.type, item.date, item.time || '', item.title, item.details || ''].join('|');
+    if (seenContent.has(contentKey)) continue;
+    seenContent.add(contentKey);
+    deduped.push(item);
+  }
+
+  return deduped.sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
     return (a.time || '').localeCompare(b.time || '');
   });

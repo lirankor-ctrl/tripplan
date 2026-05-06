@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Restaurant } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -9,7 +9,7 @@ interface RestaurantFormProps {
   tripId: string;
   initialData?: Partial<Restaurant>;
   tripDefaultDate?: string;
-  onSubmit: (data: Omit<Restaurant, 'id'>) => void;
+  onSubmit: (data: Omit<Restaurant, 'id'>) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -25,11 +25,27 @@ export function RestaurantForm({ tripId, initialData, tripDefaultDate, onSubmit,
     notes: initialData?.notes || '',
     imageUrl: initialData?.imageUrl || '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Ref guard so a synchronous double-tap can't both pass the React state check.
+  const submittingRef = useRef(false);
 
   const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(form);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-4" dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <div className="grid grid-cols-2 gap-3">
         <Input label="עיר" placeholder="למשל: רומא" value={form.city} onChange={e => set('city', e.target.value)} />
         <Input label="שם המסעדה" placeholder="למשל: Osteria Francescana" value={form.name} onChange={e => set('name', e.target.value)} />
@@ -43,11 +59,11 @@ export function RestaurantForm({ tripId, initialData, tripDefaultDate, onSubmit,
       <Textarea label="הערות" placeholder="מידע נוסף..." value={form.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} />
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => onSubmit(form)} className="flex-1">
-          {initialData?.name !== undefined ? 'שמור שינויים' : 'הוסף מסעדה'}
+        <Button type="submit" disabled={isSubmitting} className="flex-1">
+          {isSubmitting ? 'שומר...' : initialData?.name !== undefined ? 'שמור שינויים' : 'הוסף מסעדה'}
         </Button>
-        <Button variant="secondary" onClick={onCancel} className="flex-1">ביטול</Button>
+        <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} className="flex-1">ביטול</Button>
       </div>
-    </div>
+    </form>
   );
 }

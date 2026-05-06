@@ -51,6 +51,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full sm:hidden" />
           <h2 className="text-base font-semibold text-gray-900 mt-1 sm:mt-0">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 flex-shrink-0"
             aria-label="סגור"

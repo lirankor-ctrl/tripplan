@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Photo } from '@/lib/types';
 import { photosStorage } from '@/lib/storage';
@@ -11,14 +11,29 @@ import { ImageUploader } from '@/components/ui/ImageUploader';
 import { Camera, Plus, Trash2, Pencil, X, ZoomIn } from 'lucide-react';
 
 function PhotoForm({ onSubmit, onCancel }: {
-  onSubmit: (imageData: string, caption: string) => void;
+  onSubmit: (imageData: string, caption: string) => void | Promise<void>;
   onCancel: () => void;
 }) {
   const [imageData, setImageData] = useState('');
   const [caption, setCaption] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingRef.current || !imageData) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(imageData, caption);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <ImageUploader
         label="תמונה"
         value={imageData}
@@ -32,12 +47,12 @@ function PhotoForm({ onSubmit, onCancel }: {
         onChange={e => setCaption(e.target.value)}
       />
       <div className="flex gap-3 pt-1">
-        <Button onClick={() => onSubmit(imageData, caption)} className="flex-1" disabled={!imageData}>
-          הוסף תמונה
+        <Button type="submit" className="flex-1" disabled={!imageData || isSubmitting}>
+          {isSubmitting ? 'שומר...' : 'הוסף תמונה'}
         </Button>
-        <Button variant="secondary" onClick={onCancel} className="flex-1">ביטול</Button>
+        <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} className="flex-1">ביטול</Button>
       </div>
-    </div>
+    </form>
   );
 }
 

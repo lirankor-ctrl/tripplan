@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { PackingItem } from '@/lib/types';
 import { packingStorage } from '@/lib/storage';
@@ -16,25 +16,41 @@ const CATEGORIES = ['ביגוד', 'נעליים', 'היגיינה', 'תרופו�
 function PackingItemForm({ initialData, tripId, onSubmit, onCancel }: {
   initialData?: Partial<PackingItem>;
   tripId: string;
-  onSubmit: (data: Omit<PackingItem, 'id'>) => void;
+  onSubmit: (data: Omit<PackingItem, 'id'>) => void | Promise<void>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initialData?.name || '');
   const [category, setCategory] = useState(initialData?.category || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingRef.current || !name.trim()) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ tripId, name, category, isDone: initialData?.isDone || false });
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-4" dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <Input label="שם הפריט" placeholder="למשל: דרכון" value={name} onChange={e => setName(e.target.value)} autoFocus />
       <Select label="קטגוריה (אופציונלי)" value={category} onChange={e => setCategory(e.target.value)}>
         <option value="">ללא קטגוריה</option>
         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
       </Select>
       <div className="flex gap-3 pt-1">
-        <Button onClick={() => onSubmit({ tripId, name, category, isDone: initialData?.isDone || false })} className="flex-1" disabled={!name.trim()}>
-          {initialData?.name ? 'שמור' : 'הוסף'}
+        <Button type="submit" className="flex-1" disabled={!name.trim() || isSubmitting}>
+          {isSubmitting ? 'שומר...' : initialData?.name ? 'שמור' : 'הוסף'}
         </Button>
-        <Button variant="secondary" onClick={onCancel} className="flex-1">ביטול</Button>
+        <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} className="flex-1">ביטול</Button>
       </div>
-    </div>
+    </form>
   );
 }
 

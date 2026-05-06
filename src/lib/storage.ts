@@ -169,6 +169,8 @@ const noteFromRow = (r: NoteRow): TripNote => ({
 
 // ---------- Trips ----------
 
+const tripContentKey = (t: Trip) => [t.name, t.destination, t.startDate, t.endDate].join('|');
+
 export const tripsStorage = {
   async getAll(): Promise<Trip[]> {
     const userId = await getActiveUserId();
@@ -177,7 +179,13 @@ export const tripsStorage = {
       const { data, error } = await supabase
         .from('trips').select('*').order('created_at', { ascending: false });
       if (error) { console.error(error); return []; }
-      return (data as TripRow[]).map(tripFromRow);
+      const items = (data as TripRow[]).map(tripFromRow);
+      const { kept, duplicates } = splitDuplicates(items, tripContentKey);
+      if (duplicates.length) {
+        void supabase.from('trips').delete().in('id', duplicates.map(d => d.id))
+          .then(({ error: delErr }) => { if (delErr) console.error('trips dedup', delErr); });
+      }
+      return kept;
     }
     return lsGetAll<Trip>(KEYS.trips);
   },
@@ -263,7 +271,32 @@ type ChildOps<T extends { id: string; tripId: string }, Insert> = {
   toRowUpdate: (data: Partial<T>) => Record<string, unknown>;
   fromRow: (row: any) => T; // eslint-disable-line @typescript-eslint/no-explicit-any
   lsKey: string;
+  // Content key for dedup: two rows producing the same key are treated as the
+  // same item (e.g. an event with same name+date+time+location). Used to clean
+  // up rows accidentally duplicated by past mobile double-tap bugs.
+  contentKey: (item: T) => string;
 };
+
+// Splits items into the canonical row (first occurrence) and any duplicates by
+// id-equality or content-key equality. `O(n)` single pass.
+function splitDuplicates<T extends { id: string }>(
+  items: T[],
+  contentKey: (item: T) => string,
+): { kept: T[]; duplicates: T[] } {
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
+  const kept: T[] = [];
+  const duplicates: T[] = [];
+  for (const item of items) {
+    if (seenIds.has(item.id)) { duplicates.push(item); continue; }
+    seenIds.add(item.id);
+    const key = contentKey(item);
+    if (seenKeys.has(key)) { duplicates.push(item); continue; }
+    seenKeys.add(key);
+    kept.push(item);
+  }
+  return { kept, duplicates };
+}
 
 function makeChildStorage<T extends { id: string; tripId: string }, Insert extends { tripId: string }>(
   ops: ChildOps<T, Insert>,
@@ -275,9 +308,28 @@ function makeChildStorage<T extends { id: string; tripId: string }, Insert exten
         const supabase = getSupabaseBrowser()!;
         const { data, error } = await supabase.from(ops.table).select('*').eq('trip_id', tripId);
         if (error) { console.error(error); return []; }
-        return (data as unknown[]).map(ops.fromRow);
+        const items = (data as unknown[]).map(ops.fromRow);
+        const { kept, duplicates } = splitDuplicates(items, ops.contentKey);
+        // Best-effort cloud cleanup of historical duplicates. Fire-and-forget —
+        // failure just means the next read will dedupe in memory again.
+        if (duplicates.length) {
+          void supabase
+            .from(ops.table)
+            .delete()
+            .in('id', duplicates.map(d => d.id))
+            .then(({ error: delErr }) => { if (delErr) console.error('dedup cleanup', delErr); });
+        }
+        return kept;
       }
-      return lsGetAll<T>(ops.lsKey).filter(i => i.tripId === tripId);
+      const local = lsGetAll<T>(ops.lsKey).filter(i => i.tripId === tripId);
+      const { kept, duplicates } = splitDuplicates(local, ops.contentKey);
+      if (duplicates.length) {
+        // Persist the deduped slice back to localStorage.
+        const dupIds = new Set(duplicates.map(d => d.id));
+        const all = lsGetAll<T>(ops.lsKey).filter(i => !dupIds.has(i.id));
+        lsSaveAll(ops.lsKey, all);
+      }
+      return kept;
     },
 
     async create(data: Insert): Promise<T> {
@@ -334,6 +386,7 @@ export const flightsStorage = makeChildStorage<Flight, Omit<Flight, 'id'>>({
   table: 'flights',
   lsKey: KEYS.flights,
   fromRow: flightFromRow,
+  contentKey: (f) => [f.tripId, f.type, f.airline, f.departureAirport, f.arrivalAirport, f.departureDate, f.departureTime].join('|'),
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId, type: d.type,
     airline: d.airline || null,
@@ -362,6 +415,7 @@ export const hotelsStorage = makeChildStorage<Hotel, Omit<Hotel, 'id'>>({
   table: 'hotels',
   lsKey: KEYS.hotels,
   fromRow: hotelFromRow,
+  contentKey: (h) => [h.tripId, h.hotelName, h.city, h.arrivalDate, h.departureDate].join('|'),
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId,
     city: d.city || null,
@@ -389,6 +443,7 @@ export const restaurantsStorage = makeChildStorage<Restaurant, Omit<Restaurant, 
   table: 'restaurants',
   lsKey: KEYS.restaurants,
   fromRow: restaurantFromRow,
+  contentKey: (r) => [r.tripId, r.name, r.date, r.time, r.location || ''].join('|'),
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId,
     city: d.city || null, name: d.name,
@@ -414,6 +469,7 @@ export const eventsStorage = makeChildStorage<Event, Omit<Event, 'id'>>({
   table: 'events',
   lsKey: KEYS.events,
   fromRow: eventFromRow,
+  contentKey: (e) => [e.tripId, e.name, e.date, e.time, e.location || ''].join('|'),
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId,
     city: d.city || null, name: d.name,
@@ -439,6 +495,7 @@ export const packingStorage = makeChildStorage<PackingItem, Omit<PackingItem, 'i
   table: 'packing_items',
   lsKey: KEYS.packingItems,
   fromRow: packingFromRow,
+  contentKey: (p) => [p.tripId, p.name, p.category || ''].join('|'),
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId,
     name: d.name, category: d.category || null, is_done: d.isDone,
@@ -454,6 +511,8 @@ export const packingStorage = makeChildStorage<PackingItem, Omit<PackingItem, 'i
 
 // ---------- Photos ----------
 
+const photoContentKey = (p: Photo) => `${p.tripId}|${p.imageUrl}`;
+
 export const photosStorage = {
   async getByTrip(tripId: string): Promise<Photo[]> {
     const userId = await getActiveUserId();
@@ -462,9 +521,21 @@ export const photosStorage = {
       const { data, error } = await supabase
         .from('photos').select('*').eq('trip_id', tripId).order('created_at', { ascending: true });
       if (error) { console.error(error); return []; }
-      return (data as PhotoRow[]).map(photoFromRow);
+      const items = (data as PhotoRow[]).map(photoFromRow);
+      const { kept, duplicates } = splitDuplicates(items, photoContentKey);
+      if (duplicates.length) {
+        void supabase.from('photos').delete().in('id', duplicates.map(d => d.id))
+          .then(({ error: delErr }) => { if (delErr) console.error('photos dedup', delErr); });
+      }
+      return kept;
     }
-    return lsGetAll<Photo>(KEYS.photos).filter(p => p.tripId === tripId);
+    const local = lsGetAll<Photo>(KEYS.photos).filter(p => p.tripId === tripId);
+    const { kept, duplicates } = splitDuplicates(local, photoContentKey);
+    if (duplicates.length) {
+      const dupIds = new Set(duplicates.map(d => d.id));
+      lsSaveAll(KEYS.photos, lsGetAll<Photo>(KEYS.photos).filter(i => !dupIds.has(i.id)));
+    }
+    return kept;
   },
   async create(data: Omit<Photo, 'id' | 'createdAt'>): Promise<Photo> {
     const userId = await getActiveUserId();
