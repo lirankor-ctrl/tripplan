@@ -18,10 +18,10 @@ export default function ForgotPasswordPage() {
     if (!configured) return;
     setError('');
     setSubmitting(true);
-    const { error } = await resetPassword(email);
+    const { error: failure } = await resetPassword(email.trim());
     setSubmitting(false);
-    if (error) {
-      setError('שגיאה בשליחת המייל. בדוק את הכתובת ונסה שוב.');
+    if (failure) {
+      setError(failure.message);
       return;
     }
     setSent(true);

@@ -18,14 +18,16 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
 export function NotConfiguredNotice() {
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 leading-relaxed">
-      <p className="font-semibold mb-1">Supabase לא מוגדר</p>
+      <p className="font-semibold mb-1">שירות ההתחברות אינו זמין</p>
       <p>
-        כדי להפעיל הרשמה והתחברות, הוסף את המשתנים{' '}
+        כרגע לא ניתן להירשם או להתחבר. האפליקציה ממשיכה לעבוד על אחסון מקומי במכשיר זה.
+      </p>
+      <p className="mt-2 text-xs text-amber-700">
+        אם אתה מנהל המערכת: הגדר את משתני הסביבה{' '}
         <code className="text-xs bg-amber-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> ו-
         <code className="text-xs bg-amber-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{' '}
-        לקובץ <code className="text-xs bg-amber-100 px-1 rounded">.env.local</code>.
+        בסביבת הפרודקשן.
       </p>
-      <p className="mt-2">בינתיים האפליקציה עובדת על אחסון מקומי במכשיר.</p>
     </div>
   );
 }

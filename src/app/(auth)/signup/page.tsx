@@ -7,6 +7,8 @@ import { AuthCard, NotConfiguredNotice } from '@/components/auth/AuthCard';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
+const MIN_PASSWORD = 6;
+
 export default function SignupPage() {
   const { signUp, configured } = useAuth();
   const router = useRouter();
@@ -19,20 +21,28 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!configured) return;
-    if (password.length < 6) {
-      setError('סיסמה חייבת להיות לפחות 6 תווים');
+    if (submitting) return;
+    if (!configured) {
+      setError('שירות ההתחברות אינו זמין כעת.');
+      return;
+    }
+    if (!email.trim()) {
+      setError('יש להזין כתובת אימייל.');
+      return;
+    }
+    if (password.length < MIN_PASSWORD) {
+      setError(`הסיסמה חייבת להיות באורך של לפחות ${MIN_PASSWORD} תווים.`);
       return;
     }
     setError('');
     setSubmitting(true);
-    const { error, needsConfirmation } = await signUp(email, password);
+    const { error: failure, needsConfirmation: needsConfirm } = await signUp(email.trim(), password);
     setSubmitting(false);
-    if (error) {
-      setError(error.includes('already registered') ? 'כתובת האימייל כבר רשומה' : 'שגיאה בהרשמה');
+    if (failure) {
+      setError(failure.message);
       return;
     }
-    if (needsConfirmation) {
+    if (needsConfirm) {
       setNeedsConfirmation(true);
       return;
     }
@@ -58,7 +68,7 @@ export default function SignupPage() {
   return (
     <AuthCard title="הרשמה" subtitle="צור חשבון חדש כדי לסנכרן את הטיולים שלך">
       {!configured && <div className="mb-4"><NotConfiguredNotice /></div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Input
           label="אימייל"
           type="email"
@@ -69,17 +79,26 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
         />
-        <Input
-          label="סיסמה"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="לפחות 6 תווים"
-        />
-        {error && <p className="text-sm text-red-500 text-right">{error}</p>}
+        <div>
+          <Input
+            label="סיסמה"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={MIN_PASSWORD}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`לפחות ${MIN_PASSWORD} תווים`}
+          />
+          <p className="mt-1 text-xs text-gray-500 text-right">
+            לפחות {MIN_PASSWORD} תווים.
+          </p>
+        </div>
+        {error && (
+          <p role="alert" aria-live="polite" className="text-sm text-red-500 text-right">
+            {error}
+          </p>
+        )}
         <Button type="submit" className="w-full" disabled={submitting || !configured}>
           {submitting ? 'יוצר חשבון...' : 'צור חשבון'}
         </Button>

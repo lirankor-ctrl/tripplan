@@ -34,7 +34,15 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setSubmitting(false);
     if (error) {
-      setError('שגיאה בעדכון הסיסמה. נסה לבקש קישור חדש.');
+      console.error('[auth] updateUser failed:', error);
+      const raw = error.message.toLowerCase();
+      if (raw.includes('weak') || raw.includes('short')) {
+        setError('הסיסמה חלשה מדי. נסה סיסמה ארוכה יותר.');
+      } else if (raw.includes('expired') || raw.includes('invalid') || raw.includes('session')) {
+        setError('הקישור פג תוקף. בקש קישור איפוס חדש.');
+      } else {
+        setError('שגיאה בעדכון הסיסמה. נסה לבקש קישור חדש.');
+      }
       return;
     }
     router.push('/');

@@ -8,7 +8,17 @@
       "Bash(Get-ChildItem -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "PowerShell(head *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(findstr /R \"\\\\.env\")",
+      "Bash(dir /b /a .env*)",
+      "Bash(findstr \".env\")",
+      "Bash(dir /b netlify.toml)",
+      "Bash(dir /b .netlify)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

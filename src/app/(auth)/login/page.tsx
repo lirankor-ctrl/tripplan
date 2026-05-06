@@ -20,13 +20,21 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!configured) return;
+    if (submitting) return;
+    if (!configured) {
+      setError('שירות ההתחברות אינו זמין כעת.');
+      return;
+    }
+    if (!email.trim() || !password) {
+      setError('יש להזין אימייל וסיסמה.');
+      return;
+    }
     setError('');
     setSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error: failure } = await signIn(email.trim(), password);
     setSubmitting(false);
-    if (error) {
-      setError('אימייל או סיסמה שגויים');
+    if (failure) {
+      setError(failure.message);
       return;
     }
     router.push(next);
@@ -56,7 +64,11 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
         />
-        {error && <p className="text-sm text-red-500 text-right">{error}</p>}
+        {error && (
+          <p role="alert" aria-live="polite" className="text-sm text-red-500 text-right">
+            {error}
+          </p>
+        )}
         <Button type="submit" className="w-full" disabled={submitting || !configured}>
           {submitting ? 'מתחבר...' : 'התחבר'}
         </Button>
