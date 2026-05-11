@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TripDocument, DocumentCategory } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
@@ -8,7 +8,7 @@ import {
   DOCUMENT_CATEGORIES, DOCUMENT_CATEGORY_LABELS,
   MAX_FILE_SIZE_BYTES, formatFileSize, isAcceptedFileType, uploadDocument,
 } from '@/lib/documents';
-import { isDocumentStorageConfigured } from '@/lib/supabase/config';
+import { isDocumentStorageConfigured, isSupabaseConfigured, SUPABASE_STORAGE_BUCKET } from '@/lib/supabase/config';
 import { Camera, Upload, FileText, X } from 'lucide-react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { formatStorageError } from '@/lib/storage';
@@ -31,11 +31,44 @@ export function DocumentForm({ tripId, initialData, onSubmit, onCancel }: Docume
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Auth state is async (reads the local Supabase session). 'unknown' lets us
+  // hold back the UI for a render or two instead of flashing the wrong banner.
+  const [authState, setAuthState] = useState<'unknown' | 'signed-in' | 'signed-out'>('unknown');
   const submittingRef = useRef(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const storageReady = isDocumentStorageConfigured();
+  const supabaseReady = isDocumentStorageConfigured();
+  // Upload UI is enabled iff Supabase env vars are present AND the user
+  // currently has a session — both are required for storage RLS.
+  const uploadEnabled = supabaseReady && authState === 'signed-in';
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      setAuthState('signed-out');
+      return;
+    }
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      const userId = data.session?.user?.id ?? null;
+      setAuthState(userId ? 'signed-in' : 'signed-out');
+
+      // Dev-mode diagnostics so we can see why upload is/isn't enabled.
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.log('[DocumentForm]', {
+          isSupabaseConfigured: isSupabaseConfigured(),
+          currentUserId: userId,
+          bucketName: SUPABASE_STORAGE_BUCKET,
+          uploadEnabled: Boolean(supabaseReady && userId),
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [supabaseReady]);
 
   const onFilePicked = (file: File | undefined) => {
     setError(null);
@@ -66,9 +99,13 @@ export function DocumentForm({ tripId, initialData, onSubmit, onCancel }: Docume
       setError('יש להזין שם למסמך.');
       return;
     }
-    if (!isEditing && !pickedFile && !storageReady) {
-      // No file + no storage = nothing to save — guard against creating empty rows.
-      setError('אחסון מסמכים אינו מוגדר. לא ניתן להעלות קובץ כעת.');
+    if (!isEditing && !pickedFile && !uploadEnabled) {
+      // No file + can't upload = nothing to save — guard against empty rows.
+      setError(
+        supabaseReady
+          ? 'יש להתחבר כדי להעלות קובץ.'
+          : 'Supabase אינו מוגדר. לא ניתן להעלות קובץ.',
+      );
       return;
     }
 
@@ -81,8 +118,8 @@ export function DocumentForm({ tripId, initialData, onSubmit, onCancel }: Docume
       let fileSize = initialData?.fileSize;
 
       if (pickedFile) {
-        if (!storageReady) {
-          setError('אחסון מסמכים אינו מוגדר.');
+        if (!supabaseReady) {
+          setError('Supabase אינו מוגדר.');
           return;
         }
         const supabase = getSupabaseBrowser();
@@ -139,7 +176,7 @@ export function DocumentForm({ tripId, initialData, onSubmit, onCancel }: Docume
 
       {/* File pickers — large mobile-friendly buttons. The capture attribute on
           the camera input asks the OS to open the camera directly on phones. */}
-      {storageReady ? (
+      {uploadEnabled ? (
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 text-right">קובץ</label>
           <div className="grid grid-cols-2 gap-2">
@@ -203,9 +240,17 @@ export function DocumentForm({ tripId, initialData, onSubmit, onCancel }: Docume
             <p className="text-xs text-gray-400 text-right">PDF, JPG, PNG, WEBP — עד {formatFileSize(MAX_FILE_SIZE_BYTES)}.</p>
           )}
         </div>
+      ) : authState === 'unknown' ? (
+        // Brief moment while we read the local Supabase session — keep
+        // pickers off-screen so the warning doesn't flash.
+        <div className="text-xs text-gray-400 text-right">בודק חיבור...</div>
+      ) : !supabaseReady ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 text-right leading-relaxed">
+          Supabase אינו מוגדר. יש להגדיר NEXT_PUBLIC_SUPABASE_URL ו-NEXT_PUBLIC_SUPABASE_ANON_KEY.
+        </div>
       ) : (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 text-right leading-relaxed">
-          אחסון מסמכים אינו מוגדר. ניתן לשמור מסמך עם שם והערות בלבד — להעלאת קבצים יש להגדיר Supabase Storage.
+          יש להתחבר לחשבון כדי להעלות מסמכים.
         </div>
       )}
 

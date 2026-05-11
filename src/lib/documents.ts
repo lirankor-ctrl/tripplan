@@ -51,7 +51,7 @@ export interface UploadedDocument {
 }
 
 // Upload a file to the configured bucket under {userId}/{tripId}/. Returns the
-// data the caller needs to persist a trip_documents row. Throws when storage
+// data the caller needs to persist a trip_documents row. Throws when Supabase
 // isn't configured — callers must check isDocumentStorageConfigured() first.
 export async function uploadDocument(
   file: File,
@@ -59,7 +59,7 @@ export async function uploadDocument(
   tripId: string,
 ): Promise<UploadedDocument> {
   if (!isDocumentStorageConfigured()) {
-    throw new Error('אחסון מסמכים אינו מוגדר.');
+    throw new Error('Supabase אינו מוגדר.');
   }
   const supabase = getSupabaseBrowser();
   if (!supabase) throw new Error('Supabase client not initialised.');
@@ -74,7 +74,13 @@ export async function uploadDocument(
       contentType: file.type || 'application/octet-stream',
       upsert: false,
     });
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    // Surface the real Supabase error message so the form can show it
+    // verbatim (e.g. RLS denial, bucket-not-found, file-too-large).
+    // eslint-disable-next-line no-console
+    console.error('[uploadDocument] Supabase storage error:', uploadError);
+    throw uploadError;
+  }
 
   // Public URL works only when the bucket is public; for private buckets the
   // page should generate a signed URL on-demand instead. We default to public

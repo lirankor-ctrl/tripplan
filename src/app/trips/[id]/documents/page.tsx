@@ -10,7 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { DocumentForm } from '@/components/documents/DocumentForm';
 import { DOCUMENT_CATEGORY_LABELS, deleteUploadedDocument, formatFileSize } from '@/lib/documents';
-import { isDocumentStorageConfigured } from '@/lib/supabase/config';
+import { isDocumentStorageConfigured, isSupabaseConfigured, SUPABASE_STORAGE_BUCKET } from '@/lib/supabase/config';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { Plus, Files, Pencil, Trash2, Download, ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
 
 function isImageType(t?: string): boolean {
@@ -25,7 +26,7 @@ export default function DocumentsPage() {
   const [editItem, setEditItem] = useState<TripDocument | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TripDocument | null>(null);
 
-  const storageReady = isDocumentStorageConfigured();
+  const supabaseReady = isDocumentStorageConfigured();
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +42,33 @@ export default function DocumentsPage() {
     })();
     return () => { cancelled = true; };
   }, [id]);
+
+  // Dev-mode diagnostics — visible in the browser console once per mount,
+  // so we can quickly tell why upload is/isn't enabled in any environment.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      // eslint-disable-next-line no-console
+      console.log('[DocumentsPage]', {
+        isSupabaseConfigured: isSupabaseConfigured(),
+        currentUserId: null,
+        bucketName: SUPABASE_STORAGE_BUCKET,
+        uploadEnabled: false,
+      });
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      const userId = data.session?.user?.id ?? null;
+      // eslint-disable-next-line no-console
+      console.log('[DocumentsPage]', {
+        isSupabaseConfigured: isSupabaseConfigured(),
+        currentUserId: userId,
+        bucketName: SUPABASE_STORAGE_BUCKET,
+        uploadEnabled: Boolean(isSupabaseConfigured() && userId),
+      });
+    });
+  }, []);
 
   // Newest first — documents don't have a date field of their own.
   const sortedDocs = useMemo(
@@ -80,9 +108,9 @@ export default function DocumentsPage() {
         </Button>
       </div>
 
-      {!storageReady && (
+      {!supabaseReady && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 text-right leading-relaxed">
-          העלאת קבצים אינה מופעלת — נדרשת הגדרת Supabase Storage. ניתן עדיין לשמור מסמכים עם שם והערות.
+          Supabase אינו מוגדר — יש להגדיר NEXT_PUBLIC_SUPABASE_URL ו-NEXT_PUBLIC_SUPABASE_ANON_KEY כדי לאפשר שמירה והעלאה.
         </div>
       )}
 
