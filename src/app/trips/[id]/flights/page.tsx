@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Flight, Trip } from '@/lib/types';
+import { Flight, Trip, TransportType } from '@/lib/types';
 import { flightsStorage, tripsStorage } from '@/lib/storage';
 import { formatDate, getTripDefaultDate, sortFlightsForDisplay } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -11,10 +11,37 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { Badge } from '@/components/ui/Badge';
 import { FlightForm } from '@/components/flights/FlightForm';
-import { Plus, Plane, Pencil, Trash2 } from 'lucide-react';
+import { TRANSPORT_ICONS, TRANSPORT_LABELS, transportTypeOf } from '@/lib/transport';
+import { Plus, Pencil, Trash2, Map as MapIcon } from 'lucide-react';
 
-function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () => void; onDelete: () => void }) {
-  const isIntl = flight.type === 'international';
+function TransportCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () => void; onDelete: () => void }) {
+  const t: TransportType = transportTypeOf(flight.transportType);
+  // Static lookup (not a function call) so the static-components lint rule
+  // accepts the JSX usage below.
+  const Icon = TRANSPORT_ICONS[t];
+  const label = TRANSPORT_LABELS[t];
+  // Per-type background colour for the icon chip — keeps the existing flight
+  // colour palette (blue) and varies hue for the other modes so the list
+  // scans visually.
+  const chipColor: Record<TransportType, string> = {
+    flight: 'bg-blue-50 text-blue-500',
+    train: 'bg-cyan-50 text-cyan-600',
+    bus: 'bg-amber-50 text-amber-600',
+    car: 'bg-emerald-50 text-emerald-600',
+    other: 'bg-gray-50 text-gray-500',
+  };
+
+  // Only flights need the international/internal badge; other modes get the
+  // mode label as a quick scan.
+  const badgeText = t === 'flight'
+    ? (flight.type === 'international' ? 'בינלאומית' : 'פנימית')
+    : label;
+  const badgeVariant: 'blue' | 'gray' | 'green' | 'orange' | 'purple' | 'indigo' = t === 'flight'
+    ? (flight.type === 'international' ? 'blue' : 'gray')
+    : t === 'train' ? 'indigo'
+    : t === 'bus' ? 'orange'
+    : t === 'car' ? 'green'
+    : 'gray';
 
   return (
     <Card className="overflow-hidden">
@@ -22,11 +49,11 @@ function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () =
         {/* Header row */}
         <div className="flex items-start justify-between mb-4" dir="rtl">
           <div className="flex items-center gap-2.5">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isIntl ? 'bg-blue-50' : 'bg-sky-50'}`}>
-              <Plane className={`w-4 h-4 ${isIntl ? 'text-blue-500' : 'text-sky-500'}`} />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${chipColor[t]}`}>
+              <Icon className="w-4 h-4" />
             </div>
             <div>
-              <Badge variant={isIntl ? 'blue' : 'gray'}>{isIntl ? 'בינלאומית' : 'פנימית'}</Badge>
+              <Badge variant={badgeVariant}>{badgeText}</Badge>
               {flight.airline && <p className="text-sm font-semibold text-gray-800 mt-1">{flight.airline}</p>}
             </div>
           </div>
@@ -40,7 +67,7 @@ function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () =
           </div>
         </div>
 
-        {/* Outbound route — always LTR for airline ticket convention */}
+        {/* Route — LTR for airport-code style; for other modes the words sit fine LTR too */}
         <div className="flex items-center gap-2 text-center" dir="ltr">
           <div className="flex-1">
             <p className="text-2xl font-bold text-gray-900 tracking-wide">{flight.departureAirport || '---'}</p>
@@ -51,10 +78,9 @@ function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () =
           <div className="flex-shrink-0 flex flex-col items-center gap-1 px-2">
             <div className="flex items-center gap-1">
               <div className="w-8 h-px bg-gray-200" />
-              <Plane className="w-3.5 h-3.5 text-blue-400" />
+              <Icon className="w-3.5 h-3.5 text-blue-400" />
               <div className="w-8 h-px bg-gray-200" />
             </div>
-            <span className="text-xs text-gray-400">✈</span>
           </div>
 
           <div className="flex-1">
@@ -100,6 +126,7 @@ export default function FlightsPage() {
   }, [id]);
 
   const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
+  // sortFlightsForDisplay already returns: undated first, then dated by date+time.
   const sortedFlights = useMemo(() => sortFlightsForDisplay(flights), [flights]);
 
   const handleAdd = async (data: Omit<Flight, 'id'>) => {
@@ -125,10 +152,10 @@ export default function FlightsPage() {
   return (
     <div className="p-4 md:p-6" dir="rtl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">טיסות</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">נסיעות / הסעות</h1>
         <Button onClick={() => setShowAdd(true)} size="sm">
           <Plus className="w-4 h-4" />
-          הוסף טיסה
+          הוסף נסיעה
         </Button>
       </div>
 
@@ -136,20 +163,20 @@ export default function FlightsPage() {
         <LoadingState />
       ) : flights.length === 0 ? (
         <EmptyState
-          icon={Plane}
-          title="אין טיסות עדיין"
-          description="הוסף את פרטי הטיסות הבינלאומיות והפנימיות שלך"
+          icon={MapIcon}
+          title="אין נסיעות עדיין"
+          description="הוסף טיסות, רכבות, אוטובוסים או נסיעות ברכב לטיול שלך"
           action={
             <Button onClick={() => setShowAdd(true)}>
               <Plus className="w-4 h-4" />
-              הוסף טיסה
+              הוסף נסיעה
             </Button>
           }
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sortedFlights.map(f => (
-            <FlightCard
+            <TransportCard
               key={f.id}
               flight={f}
               onEdit={() => setEditFlight(f)}
@@ -159,19 +186,19 @@ export default function FlightsPage() {
         </div>
       )}
 
-      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף טיסה">
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף נסיעה">
         <FlightForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
 
-      <Modal isOpen={!!editFlight} onClose={() => setEditFlight(null)} title="עריכת טיסה">
+      <Modal isOpen={!!editFlight} onClose={() => setEditFlight(null)} title="עריכת נסיעה">
         {editFlight && (
           <FlightForm tripId={id} initialData={editFlight} onSubmit={handleEdit} onCancel={() => setEditFlight(null)} />
         )}
       </Modal>
 
-      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="מחיקת טיסה" size="sm">
+      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="מחיקת נסיעה" size="sm">
         <div className="space-y-4 text-center" dir="rtl">
-          <p className="text-gray-600">האם למחוק את הטיסה? לא ניתן לשחזר פעולה זו.</p>
+          <p className="text-gray-600">האם למחוק את הנסיעה? לא ניתן לשחזר פעולה זו.</p>
           <div className="flex gap-3">
             <Button variant="danger" className="flex-1" onClick={handleDelete}>מחק</Button>
             <Button variant="secondary" className="flex-1" onClick={() => setDeleteId(null)}>ביטול</Button>

@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Flight, Hotel, Restaurant, Event, CalendarEvent } from '@/lib/types';
+import { Flight, Hotel, Restaurant, Event, CalendarEvent, TransportType } from '@/lib/types';
 import { CATEGORY_COLORS } from '@/lib/utils';
 import {
   format, parseISO, eachDayOfInterval, isValid, isToday,
@@ -10,10 +10,16 @@ import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Plane, Hotel as HotelIcon, UtensilsCrossed, Music, Calendar } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { TRANSPORT_ICONS } from '@/lib/transport';
+import { transportTypeOf } from '@/lib/transport';
 
 // Sunday-first, matching getDay() indices 0–6
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
+// Default per-section icons. Transport rows look up their icon via
+// TRANSPORT_ICONS based on CalendarEvent.transportType — kept as a static
+// property lookup (not a function call) so the static-components lint rule
+// accepts it inside the render path.
 const CATEGORY_ICONS = {
   flight: Plane,
   hotel: HotelIcon,
@@ -23,7 +29,7 @@ const CATEGORY_ICONS = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  flight: 'טיסות',
+  flight: 'נסיעות',
   hotel: 'מלונות',
   restaurant: 'מסעדות',
   event: 'אירועים',
@@ -40,11 +46,13 @@ function buildCalendarEvents(
 
   flights.forEach(f => {
     if (f.departureDate) {
+      const tt: TransportType = transportTypeOf(f.transportType);
       items.push({
         id: `${f.id}_dep`,
         date: f.departureDate,
-        title: [f.departureAirport, f.arrivalAirport].filter(Boolean).join(' → ') || 'טיסה',
+        title: [f.departureAirport, f.arrivalAirport].filter(Boolean).join(' → ') || 'נסיעה',
         type: 'flight',
+        transportType: tt,
         time: f.departureTime || undefined,
         details: f.airline || undefined,
         sourceId: f.id,
@@ -157,7 +165,9 @@ interface CalendarProps {
 
 function EventChip({ evt, onClick }: { evt: CalendarEvent; onClick?: () => void }) {
   const colors = CATEGORY_COLORS[evt.type];
-  const Icon = CATEGORY_ICONS[evt.type];
+  const Icon = evt.type === 'flight'
+    ? TRANSPORT_ICONS[transportTypeOf(evt.transportType)]
+    : CATEGORY_ICONS[evt.type];
   return (
     <button
       type="button"
@@ -215,9 +225,9 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
         <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
           <Plane className="w-7 h-7 text-blue-400" />
         </div>
-        <p className="text-gray-700 font-semibold mb-1">אין טיסות עדיין</p>
+        <p className="text-gray-700 font-semibold mb-1">אין נסיעות עדיין</p>
         <p className="text-sm text-gray-400 max-w-xs">
-          כדי להציג את לוח השנה, הוסף קודם לפחות טיסה אחת
+          כדי להציג את לוח השנה, הוסף קודם לפחות נסיעה אחת עם תאריך
         </p>
       </div>
     );
@@ -336,7 +346,9 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
                   <div className="px-3 py-2 space-y-1.5">
                     {dayEvents.map(evt => {
                       const colors = CATEGORY_COLORS[evt.type];
-                      const Icon = CATEGORY_ICONS[evt.type];
+                      const Icon = evt.type === 'flight'
+                        ? TRANSPORT_ICONS[transportTypeOf(evt.transportType)]
+                        : CATEGORY_ICONS[evt.type];
                       return (
                         <button
                           key={evt.id}

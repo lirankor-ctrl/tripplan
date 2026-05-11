@@ -11,8 +11,9 @@ import { TripCalendar } from '@/components/calendar/TripCalendar';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { printWithMode } from '@/lib/print';
+import { TRANSPORT_ICONS, transportTypeOf } from '@/lib/transport';
 import {
-  Printer, Plane, Hotel as HotelIcon, UtensilsCrossed,
+  Plane, Hotel as HotelIcon, UtensilsCrossed,
   Music, Package, FileText, MapPin, Calendar, Check,
 } from 'lucide-react';
 
@@ -122,24 +123,28 @@ export default function ExportPage() {
         {/* Textual summary — hidden when printing the visual calendar. */}
         <div data-print-target="summary">
 
-        {/* Flights — single chronological list, dateless first. */}
+        {/* Transportation — single chronological list, dateless first. */}
         {flights.length > 0 && (
           <section className="mb-8">
-            <SectionTitle icon={Plane} title="טיסות" colorClass="border-blue-400 text-blue-700" />
+            <SectionTitle icon={Plane} title="נסיעות / הסעות" colorClass="border-blue-400 text-blue-700" />
             <div className="space-y-2">
-              {sortFlightsForDisplay(flights).map(f => (
-                <div key={f.id} className="flex flex-wrap items-center gap-3 p-3 bg-blue-50 rounded-xl text-sm">
-                  <Plane className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <span className="font-bold text-blue-800">
-                    {f.departureAirport || '—'} → {f.arrivalAirport || '—'}
-                  </span>
-                  {f.airline && <span className="text-gray-600">{f.airline}</span>}
-                  {f.departureDate && (
-                    <span className="text-gray-600">{formatDate(f.departureDate)}{f.departureTime ? ` ${f.departureTime}` : ''}</span>
-                  )}
-                  {f.price && <span className="text-green-600 font-semibold mr-auto">₪{f.price}</span>}
-                </div>
-              ))}
+              {sortFlightsForDisplay(flights).map(f => {
+                // Static lookup keeps the static-components lint rule happy.
+                const Icon = TRANSPORT_ICONS[transportTypeOf(f.transportType)];
+                return (
+                  <div key={f.id} className="flex flex-wrap items-center gap-3 p-3 bg-blue-50 rounded-xl text-sm">
+                    <Icon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <span className="font-bold text-blue-800">
+                      {f.departureAirport || '—'} → {f.arrivalAirport || '—'}
+                    </span>
+                    {f.airline && <span className="text-gray-600">{f.airline}</span>}
+                    {f.departureDate && (
+                      <span className="text-gray-600">{formatDate(f.departureDate)}{f.departureTime ? ` ${f.departureTime}` : ''}</span>
+                    )}
+                    {f.price && <span className="text-green-600 font-semibold mr-auto">₪{f.price}</span>}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

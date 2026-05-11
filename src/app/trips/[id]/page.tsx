@@ -4,25 +4,28 @@ import { useParams } from 'next/navigation';
 import { Trip } from '@/lib/types';
 import {
   tripsStorage, flightsStorage, hotelsStorage,
-  restaurantsStorage, eventsStorage, packingStorage,
+  restaurantsStorage, eventsStorage, packingStorage, documentsStorage,
 } from '@/lib/storage';
 import { formatDate } from '@/lib/utils';
 import { Card, CardBody } from '@/components/ui/Card';
 import { LoadingState } from '@/components/ui/LoadingState';
 import Link from 'next/link';
 import {
-  Plane, Hotel, UtensilsCrossed, Music, Package,
+  Map as MapIcon, Hotel, UtensilsCrossed, Music, Package,
   Calendar, Camera, FileText, Printer, MapPin,
-  CalendarDays, ChevronLeft,
+  CalendarDays, ChevronLeft, Files, Receipt,
 } from 'lucide-react';
 
+// Order mirrors navItems in TripSidebar.tsx (same source-of-truth ordering).
 const sections = [
-  { href: 'flights', label: 'טיסות', icon: Plane, colorClass: 'bg-blue-50 text-blue-600', description: 'טיסות בינלאומיות ופנימיות' },
+  { href: 'calendar', label: 'לוח שנה', icon: Calendar, colorClass: 'bg-indigo-50 text-indigo-600', description: 'תצוגת כל האירועים' },
+  { href: 'flights', label: 'נסיעות / הסעות', icon: MapIcon, colorClass: 'bg-blue-50 text-blue-600', description: 'טיסות, רכבות, אוטובוסים, רכב' },
   { href: 'hotels', label: 'מלונות', icon: Hotel, colorClass: 'bg-purple-50 text-purple-600', description: 'לינה ואירוח' },
   { href: 'restaurants', label: 'מסעדות', icon: UtensilsCrossed, colorClass: 'bg-green-50 text-green-600', description: 'הזמנות ומסעדות' },
   { href: 'events', label: 'אירועים והופעות', icon: Music, colorClass: 'bg-orange-50 text-orange-600', description: 'כרטיסים ואירועים' },
+  { href: 'documents', label: 'מסמכים', icon: Files, colorClass: 'bg-cyan-50 text-cyan-600', description: 'דרכון, ביטוח, כרטיסים' },
+  { href: 'expenses', label: 'הוצאות', icon: Receipt, colorClass: 'bg-rose-50 text-rose-600', description: 'סיכום הוצאות הטיול' },
   { href: 'packing', label: 'רשימת אריזה', icon: Package, colorClass: 'bg-yellow-50 text-yellow-600', description: 'מה לארוז' },
-  { href: 'calendar', label: 'לוח שנה', icon: Calendar, colorClass: 'bg-indigo-50 text-indigo-600', description: 'תצוגת כל האירועים' },
   { href: 'photos', label: 'אלבום תמונות', icon: Camera, colorClass: 'bg-pink-50 text-pink-600', description: 'תמונות מהטיול' },
   { href: 'notes', label: 'הערות', icon: FileText, colorClass: 'bg-teal-50 text-teal-600', description: 'הערות חופשיות' },
   { href: 'export', label: 'ייצוא והדפסה', icon: Printer, colorClass: 'bg-gray-50 text-gray-600', description: 'הדפסה ו-PDF' },
@@ -34,7 +37,7 @@ export default function TripDashboard() {
   const { id } = useParams<{ id: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [stats, setStats] = useState({
-    flights: 0, hotels: 0, restaurants: 0, events: 0, packing: 0, packingDone: 0,
+    flights: 0, hotels: 0, restaurants: 0, events: 0, packing: 0, packingDone: 0, documents: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,13 +46,16 @@ export default function TripDashboard() {
     setLoading(true);
     (async () => {
       try {
-        const [t, flights, hotels, restaurants, events, packingItems] = await Promise.all([
+        const [t, flights, hotels, restaurants, events, packingItems, documents] = await Promise.all([
           tripsStorage.getById(id),
           flightsStorage.getByTrip(id),
           hotelsStorage.getByTrip(id),
           restaurantsStorage.getByTrip(id),
           eventsStorage.getByTrip(id),
           packingStorage.getByTrip(id),
+          // documentsStorage swallows errors — if the trip_documents table
+          // doesn't exist yet (migration not run), this just returns [].
+          documentsStorage.getByTrip(id),
         ]);
         if (cancelled) return;
         setTrip(t ?? null);
@@ -60,6 +66,7 @@ export default function TripDashboard() {
           events: events.length,
           packing: packingItems.length,
           packingDone: packingItems.filter(p => p.isDone).length,
+          documents: documents.length,
         });
       } finally {
         if (!cancelled) setLoading(false);
@@ -103,13 +110,14 @@ export default function TripDashboard() {
       </div>
 
       <div className="p-4 md:p-6">
-        {/* Stats — 3 cols on mobile, 5 on desktop */}
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 mb-6">
+        {/* Stats — 3 cols on mobile, 6 on desktop */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3 mb-6">
           {[
-            { label: 'טיסות', value: stats.flights, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'נסיעות', value: stats.flights, color: 'text-blue-600', bg: 'bg-blue-50' },
             { label: 'מלונות', value: stats.hotels, color: 'text-purple-600', bg: 'bg-purple-50' },
             { label: 'מסעדות', value: stats.restaurants, color: 'text-green-600', bg: 'bg-green-50' },
             { label: 'אירועים', value: stats.events, color: 'text-orange-600', bg: 'bg-orange-50' },
+            { label: 'מסמכים', value: stats.documents, color: 'text-cyan-600', bg: 'bg-cyan-50' },
             {
               label: 'אריזה',
               value: stats.packing > 0 ? `${stats.packingDone}/${stats.packing}` : '0',

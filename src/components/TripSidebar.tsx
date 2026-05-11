@@ -3,18 +3,24 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  Plane, Hotel, UtensilsCrossed, Music, Package, Calendar,
+  Map as MapIcon, Hotel, UtensilsCrossed, Music, Package, Calendar,
   Camera, FileText, Printer, LayoutDashboard, ChevronRight, MoreHorizontal,
+  Files, Receipt,
 } from 'lucide-react';
 import { Trip } from '@/lib/types';
 import { useState } from 'react';
 
+// Single source of truth for both desktop sidebar and mobile bottom nav.
+// The /flights route is preserved (existing bookmarks keep working) — only
+// the user-facing label changed to reflect the broader transport scope.
 export const navItems = [
   { href: '/calendar', label: 'לוח שנה', icon: Calendar },
-  { href: '/flights', label: 'טיסות', icon: Plane },
+  { href: '/flights', label: 'נסיעות / הסעות', icon: MapIcon },
   { href: '/hotels', label: 'מלונות', icon: Hotel },
   { href: '/restaurants', label: 'מסעדות', icon: UtensilsCrossed },
   { href: '/events', label: 'אירועים', icon: Music },
+  { href: '/documents', label: 'מסמכים', icon: Files },
+  { href: '/expenses', label: 'הוצאות', icon: Receipt },
   { href: '/packing', label: 'אריזה', icon: Package },
   { href: '/photos', label: 'תמונות', icon: Camera },
   { href: '/notes', label: 'הערות', icon: FileText },
