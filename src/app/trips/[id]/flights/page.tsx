@@ -152,7 +152,7 @@ export default function FlightsPage() {
   return (
     <div className="p-4 md:p-6" dir="rtl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">נסיעות / הסעות</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">טיסות / העברות</h1>
         <Button onClick={() => setShowAdd(true)} size="sm">
           <Plus className="w-4 h-4" />
           הוסף נסיעה
@@ -164,7 +164,7 @@ export default function FlightsPage() {
       ) : flights.length === 0 ? (
         <EmptyState
           icon={MapIcon}
-          title="אין נסיעות עדיין"
+          title="אין טיסות או העברות עדיין"
           description="הוסף טיסות, רכבות, אוטובוסים או נסיעות ברכב לטיול שלך"
           action={
             <Button onClick={() => setShowAdd(true)}>

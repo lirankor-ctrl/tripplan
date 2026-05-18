@@ -126,7 +126,7 @@ export default function ExportPage() {
         {/* Transportation — single chronological list, dateless first. */}
         {flights.length > 0 && (
           <section className="mb-8">
-            <SectionTitle icon={Plane} title="נסיעות / הסעות" colorClass="border-blue-400 text-blue-700" />
+            <SectionTitle icon={Plane} title="טיסות / העברות" colorClass="border-blue-400 text-blue-700" />
             <div className="space-y-2">
               {sortFlightsForDisplay(flights).map(f => {
                 // Static lookup keeps the static-components lint rule happy.

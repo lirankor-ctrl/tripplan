@@ -29,7 +29,7 @@ const CATEGORY_ICONS = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  flight: 'נסיעות',
+  flight: 'טיסות',
   hotel: 'מלונות',
   restaurant: 'מסעדות',
   event: 'אירועים',
@@ -225,7 +225,7 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
         <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
           <Plane className="w-7 h-7 text-blue-400" />
         </div>
-        <p className="text-gray-700 font-semibold mb-1">אין נסיעות עדיין</p>
+        <p className="text-gray-700 font-semibold mb-1">אין טיסות או העברות עדיין</p>
         <p className="text-sm text-gray-400 max-w-xs">
           כדי להציג את לוח השנה, הוסף קודם לפחות נסיעה אחת עם תאריך
         </p>

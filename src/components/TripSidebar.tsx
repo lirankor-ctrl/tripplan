@@ -15,7 +15,7 @@ import { useState } from 'react';
 // the user-facing label changed to reflect the broader transport scope.
 export const navItems = [
   { href: '/calendar', label: 'לוח שנה', icon: Calendar },
-  { href: '/flights', label: 'נסיעות / הסעות', icon: MapIcon },
+  { href: '/flights', label: 'טיסות / העברות', icon: MapIcon },
   { href: '/hotels', label: 'מלונות', icon: Hotel },
   { href: '/restaurants', label: 'מסעדות', icon: UtensilsCrossed },
   { href: '/events', label: 'אירועים', icon: Music },
