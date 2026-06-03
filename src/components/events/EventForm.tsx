@@ -47,7 +47,7 @@ export function EventForm({ tripId, initialData, tripDefaultDate, onSubmit, onCa
     <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <div className="grid grid-cols-2 gap-3">
         <Input label="עיר" placeholder="למשל: לונדון" value={form.city} onChange={e => set('city', e.target.value)} />
-        <Input label="שם האירוע / ההופעה" placeholder="למשל: Coldplay Concert" value={form.name} onChange={e => set('name', e.target.value)} />
+        <Input label="שם הפעילות / ההופעה" placeholder="למשל: Coldplay Concert" value={form.name} onChange={e => set('name', e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Input label="תאריך" type="date" value={form.date} onChange={e => set('date', e.target.value)} />
@@ -59,7 +59,7 @@ export function EventForm({ tripId, initialData, tripDefaultDate, onSubmit, onCa
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'שומר...' : initialData?.name !== undefined ? 'שמור שינויים' : 'הוסף אירוע'}
+          {isSubmitting ? 'שומר...' : initialData?.name !== undefined ? 'שמור שינויים' : 'הוסף פעילות'}
         </Button>
         <Button variant="secondary" onClick={onCancel} disabled={isSubmitting} className="flex-1">ביטול</Button>
       </div>

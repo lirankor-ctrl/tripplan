@@ -17,7 +17,7 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
   flight_ticket: 'כרטיסי טיסה',
   hotel_booking: 'הזמנת מלון',
   car_rental: 'השכרת רכב',
-  event_ticket: 'כרטיסים לאירועים',
+  event_ticket: 'כרטיסים לפעילות',
   visa: 'ויזה',
   other: 'אחר',
 };

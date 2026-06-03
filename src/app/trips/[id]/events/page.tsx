@@ -66,10 +66,10 @@ export default function EventsPage() {
   return (
     <div className="p-4 md:p-6" dir="rtl">
       <div className="flex items-center justify-between gap-2 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 min-w-0 truncate">אירועים והופעות</h1>
-        <Button onClick={() => setShowAdd(true)} size="sm" className="flex-shrink-0" aria-label="הוסף אירוע">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 min-w-0 truncate">פעילות והופעות</h1>
+        <Button onClick={() => setShowAdd(true)} size="sm" className="flex-shrink-0" aria-label="הוסף פעילות">
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">הוסף אירוע</span>
+          <span className="hidden sm:inline">הוסף פעילות</span>
         </Button>
       </div>
 
@@ -78,9 +78,9 @@ export default function EventsPage() {
       ) : events.length === 0 ? (
         <EmptyState
           icon={Music}
-          title="אין אירועים עדיין"
+          title="אין פעילות עדיין"
           description="הוסף הופעות, מופעים, וכרטיסים לטיול שלך"
-          action={<Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" />הוסף אירוע</Button>}
+          action={<Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4" />הוסף פעילות</Button>}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -138,15 +138,15 @@ export default function EventsPage() {
         </div>
       )}
 
-      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף אירוע">
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="הוסף פעילות">
         <EventForm tripId={id} tripDefaultDate={tripDefaultDate} onSubmit={handleAdd} onCancel={() => setShowAdd(false)} />
       </Modal>
-      <Modal isOpen={!!editItem} onClose={() => setEditItem(null)} title="עריכת אירוע">
+      <Modal isOpen={!!editItem} onClose={() => setEditItem(null)} title="עריכת פעילות">
         {editItem && <EventForm tripId={id} initialData={editItem} onSubmit={handleEdit} onCancel={() => setEditItem(null)} />}
       </Modal>
-      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="מחיקת אירוע" size="sm">
+      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="מחיקת פעילות" size="sm">
         <div className="space-y-4 text-center">
-          <p className="text-gray-600">האם למחוק את האירוע?</p>
+          <p className="text-gray-600">האם למחוק את הפעילות?</p>
           <div className="flex gap-3">
             <Button variant="danger" className="flex-1" onClick={handleDelete}>מחק</Button>
             <Button variant="secondary" className="flex-1" onClick={() => setDeleteId(null)}>ביטול</Button>

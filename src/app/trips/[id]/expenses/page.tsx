@@ -34,7 +34,7 @@ const CATEGORY_LABELS: Record<ExpenseEntry['category'], string> = {
   transport: 'טיסות / העברות',
   hotels: 'מלונות',
   restaurants: 'מסעדות',
-  events: 'אירועים',
+  events: 'פעילות',
   other: 'אחר',
 };
 

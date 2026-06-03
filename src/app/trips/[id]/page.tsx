@@ -18,11 +18,11 @@ import {
 
 // Order mirrors navItems in TripSidebar.tsx (same source-of-truth ordering).
 const sections = [
-  { href: 'calendar', label: 'לוח שנה', icon: Calendar, colorClass: 'bg-indigo-50 text-indigo-600', description: 'תצוגת כל האירועים' },
+  { href: 'calendar', label: 'לוח שנה', icon: Calendar, colorClass: 'bg-indigo-50 text-indigo-600', description: 'תצוגת כל הפעילות' },
   { href: 'flights', label: 'טיסות / העברות', icon: MapIcon, colorClass: 'bg-blue-50 text-blue-600', description: 'טיסות, רכבות, אוטובוסים, רכב' },
   { href: 'hotels', label: 'מלונות', icon: Hotel, colorClass: 'bg-purple-50 text-purple-600', description: 'לינה ואירוח' },
   { href: 'restaurants', label: 'מסעדות', icon: UtensilsCrossed, colorClass: 'bg-green-50 text-green-600', description: 'הזמנות ומסעדות' },
-  { href: 'events', label: 'אירועים והופעות', icon: Music, colorClass: 'bg-orange-50 text-orange-600', description: 'כרטיסים ואירועים' },
+  { href: 'events', label: 'פעילות והופעות', icon: Music, colorClass: 'bg-orange-50 text-orange-600', description: 'כרטיסים ופעילות' },
   { href: 'documents', label: 'מסמכים', icon: Files, colorClass: 'bg-cyan-50 text-cyan-600', description: 'דרכון, ביטוח, כרטיסים' },
   { href: 'expenses', label: 'הוצאות', icon: Receipt, colorClass: 'bg-rose-50 text-rose-600', description: 'סיכום הוצאות הטיול' },
   { href: 'packing', label: 'רשימת אריזה', icon: Package, colorClass: 'bg-yellow-50 text-yellow-600', description: 'מה לארוז' },
@@ -116,7 +116,7 @@ export default function TripDashboard() {
             { label: 'טיסות', value: stats.flights, color: 'text-blue-600', bg: 'bg-blue-50' },
             { label: 'מלונות', value: stats.hotels, color: 'text-purple-600', bg: 'bg-purple-50' },
             { label: 'מסעדות', value: stats.restaurants, color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'אירועים', value: stats.events, color: 'text-orange-600', bg: 'bg-orange-50' },
+            { label: 'פעילות', value: stats.events, color: 'text-orange-600', bg: 'bg-orange-50' },
             { label: 'מסמכים', value: stats.documents, color: 'text-cyan-600', bg: 'bg-cyan-50' },
             {
               label: 'אריזה',
