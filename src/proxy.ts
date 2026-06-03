@@ -50,6 +50,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip Next internals + static assets.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // Skip Next internals + static assets (incl. the public PWA manifest).
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest)$).*)'],
 };
