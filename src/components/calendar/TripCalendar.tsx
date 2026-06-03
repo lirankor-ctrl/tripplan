@@ -32,7 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   flight: 'טיסות',
   hotel: 'מלונות',
   restaurant: 'מסעדות',
-  event: 'אירועים',
+  event: 'פעילות',
   note: 'הערות',
 };
 

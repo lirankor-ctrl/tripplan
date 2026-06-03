@@ -195,7 +195,7 @@ export default function ExportPage() {
         {/* Events */}
         {events.length > 0 && (
           <section className="mb-8">
-            <SectionTitle icon={Music} title="אירועים והופעות" colorClass="border-orange-400 text-orange-700" />
+            <SectionTitle icon={Music} title="פעילות והופעות" colorClass="border-orange-400 text-orange-700" />
             <div className="space-y-2">
               {events.map(e => (
                 <div key={e.id} className="flex flex-wrap items-center gap-3 p-3 bg-orange-50 rounded-xl text-sm">

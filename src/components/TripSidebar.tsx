@@ -18,7 +18,7 @@ export const navItems = [
   { href: '/flights', label: 'טיסות / העברות', icon: MapIcon },
   { href: '/hotels', label: 'מלונות', icon: Hotel },
   { href: '/restaurants', label: 'מסעדות', icon: UtensilsCrossed },
-  { href: '/events', label: 'אירועים', icon: Music },
+  { href: '/events', label: 'פעילות', icon: Music },
   { href: '/documents', label: 'מסמכים', icon: Files },
   { href: '/expenses', label: 'הוצאות', icon: Receipt },
   { href: '/packing', label: 'אריזה', icon: Package },
