@@ -12,6 +12,7 @@ import { Plane, Hotel as HotelIcon, UtensilsCrossed, Music, Calendar } from 'luc
 import { Modal } from '@/components/ui/Modal';
 import { TRANSPORT_ICONS } from '@/lib/transport';
 import { transportTypeOf } from '@/lib/transport';
+import { ACTIVITY_TYPE_ICONS, activityTypeOf, activityTypeLabel } from '@/lib/activityTypes';
 
 // Sunday-first, matching getDay() indices 0–6
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -99,6 +100,7 @@ function buildCalendarEvents(
         date: e.date,
         title: e.name,
         type: 'event',
+        activityType: e.activityType,
         time: e.time || undefined,
         details: [e.city, e.location].filter(Boolean).join(' · ') || undefined,
         sourceId: e.id,
@@ -167,7 +169,9 @@ function EventChip({ evt, onClick }: { evt: CalendarEvent; onClick?: () => void 
   const colors = CATEGORY_COLORS[evt.type];
   const Icon = evt.type === 'flight'
     ? TRANSPORT_ICONS[transportTypeOf(evt.transportType)]
-    : CATEGORY_ICONS[evt.type];
+    : evt.type === 'event'
+      ? ACTIVITY_TYPE_ICONS[activityTypeOf(evt.activityType)]
+      : CATEGORY_ICONS[evt.type];
   return (
     <button
       type="button"
@@ -348,7 +352,9 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
                       const colors = CATEGORY_COLORS[evt.type];
                       const Icon = evt.type === 'flight'
                         ? TRANSPORT_ICONS[transportTypeOf(evt.transportType)]
-                        : CATEGORY_ICONS[evt.type];
+                        : evt.type === 'event'
+                          ? ACTIVITY_TYPE_ICONS[activityTypeOf(evt.activityType)]
+                          : CATEGORY_ICONS[evt.type];
                       return (
                         <button
                           key={evt.id}
@@ -415,7 +421,7 @@ export function TripCalendar({ flights, hotels, restaurants, events, printMode }
                 CATEGORY_COLORS[selectedEvent.type].bg,
                 CATEGORY_COLORS[selectedEvent.type].text,
               )}>
-                {CATEGORY_LABELS[selectedEvent.type]}
+                {selectedEvent.type === 'event' ? activityTypeLabel(selectedEvent.activityType) : CATEGORY_LABELS[selectedEvent.type]}
               </span>
             </div>
           </div>

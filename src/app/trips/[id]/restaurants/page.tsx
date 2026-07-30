@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Flight, Restaurant, Trip } from '@/lib/types';
 import { flightsStorage, restaurantsStorage, tripsStorage } from '@/lib/storage';
-import { formatDate, getTripDefaultDate } from '@/lib/utils';
+import { formatDate, getTripDefaultDate, sortByDateTime } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -44,6 +44,10 @@ export default function RestaurantsPage() {
   }, [id]);
 
   const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
+  const sortedRestaurants = useMemo(
+    () => sortByDateTime(restaurants, r => r.date, r => r.time),
+    [restaurants],
+  );
 
   const handleAdd = async (data: Omit<Restaurant, 'id'>) => {
     const r = await restaurantsStorage.create(data);
@@ -84,7 +88,7 @@ export default function RestaurantsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {restaurants.map(r => (
+          {sortedRestaurants.map(r => (
             <Card key={r.id} className="overflow-hidden">
               {r.imageUrl && (
                 <div className="h-36 overflow-hidden">
