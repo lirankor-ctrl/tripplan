@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   Map as MapIcon, Hotel, UtensilsCrossed, Music, Package, Calendar,
   Camera, FileText, Printer, LayoutDashboard, ChevronRight, MoreHorizontal,
-  Files, Receipt,
+  Files, Receipt, Sun,
 } from 'lucide-react';
 import { Trip } from '@/lib/types';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import { useState } from 'react';
 // The /flights route is preserved (existing bookmarks keep working) — only
 // the user-facing label changed to reflect the broader transport scope.
 export const navItems = [
+  { href: '/today', label: 'היום בטיול', icon: Sun },
   { href: '/calendar', label: 'לוח שנה', icon: Calendar },
   { href: '/flights', label: 'טיסות / העברות', icon: MapIcon },
   { href: '/hotels', label: 'מלונות', icon: Hotel },

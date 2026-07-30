@@ -44,6 +44,35 @@ export function sortFlightsForDisplay(flights: Flight[]): Flight[] {
   return [...undated, ...dated];
 }
 
+// Same "undated first, then chronological" convention as sortFlightsForDisplay,
+// generalized for modules with a single date field (e.g. hotels' arrivalDate).
+// Pure: returns a new array, leaves the input untouched.
+export function sortByDate<T>(items: T[], dateOf: (item: T) => string): T[] {
+  const undated: T[] = [];
+  const dated: T[] = [];
+  for (const item of items) (dateOf(item) ? dated : undated).push(item);
+  dated.sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
+  return [...undated, ...dated];
+}
+
+// Same as sortByDate, with a time tiebreak for same-day items (e.g.
+// restaurant/activity date + time). Pure: returns a new array.
+export function sortByDateTime<T>(
+  items: T[],
+  dateOf: (item: T) => string,
+  timeOf: (item: T) => string,
+): T[] {
+  const undated: T[] = [];
+  const dated: T[] = [];
+  for (const item of items) (dateOf(item) ? dated : undated).push(item);
+  dated.sort((a, b) => {
+    const da = dateOf(a), db = dateOf(b);
+    if (da !== db) return da.localeCompare(db);
+    return (timeOf(a) || '').localeCompare(timeOf(b) || '');
+  });
+  return [...undated, ...dated];
+}
+
 
 
 export function cn(...classes: (string | undefined | false | null)[]): string {

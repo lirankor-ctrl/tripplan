@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Event, Flight, Trip } from '@/lib/types';
 import { eventsStorage, flightsStorage, tripsStorage } from '@/lib/storage';
-import { formatDate, getTripDefaultDate } from '@/lib/utils';
+import { formatDate, getTripDefaultDate, sortByDateTime } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -44,6 +44,10 @@ export default function EventsPage() {
   }, [id]);
 
   const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
+  const sortedEvents = useMemo(
+    () => sortByDateTime(events, e => e.date, e => e.time),
+    [events],
+  );
 
   const handleAdd = async (data: Omit<Event, 'id'>) => {
     const e = await eventsStorage.create(data);
@@ -84,7 +88,7 @@ export default function EventsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {events.map(evt => (
+          {sortedEvents.map(evt => (
             <Card key={evt.id} className="overflow-hidden">
               {evt.imageUrl && (
                 <div className="h-36 overflow-hidden">

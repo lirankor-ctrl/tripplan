@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Flight, Hotel, Trip } from '@/lib/types';
 import { flightsStorage, hotelsStorage, tripsStorage } from '@/lib/storage';
-import { formatDate, getTripDefaultDate } from '@/lib/utils';
+import { formatDate, getTripDefaultDate, sortByDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -44,6 +44,7 @@ export default function HotelsPage() {
   }, [id]);
 
   const tripDefaultDate = useMemo(() => getTripDefaultDate(trip, flights), [trip, flights]);
+  const sortedHotels = useMemo(() => sortByDate(hotels, h => h.arrivalDate), [hotels]);
 
   const handleAdd = async (data: Omit<Hotel, 'id'>) => {
     const h = await hotelsStorage.create(data);
@@ -86,7 +87,7 @@ export default function HotelsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {hotels.map(hotel => (
+          {sortedHotels.map(hotel => (
             <Card key={hotel.id}>
               <CardBody className="p-5" dir="rtl">
                 <div className="flex items-start justify-between mb-3">

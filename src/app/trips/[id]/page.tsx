@@ -13,11 +13,12 @@ import Link from 'next/link';
 import {
   Map as MapIcon, Hotel, UtensilsCrossed, Music, Package,
   Calendar, Camera, FileText, Printer, MapPin,
-  CalendarDays, ChevronLeft, Files, Receipt,
+  CalendarDays, ChevronLeft, Files, Receipt, Sun,
 } from 'lucide-react';
 
 // Order mirrors navItems in TripSidebar.tsx (same source-of-truth ordering).
 const sections = [
+  { href: 'today', label: 'היום בטיול', icon: Sun, colorClass: 'bg-amber-50 text-amber-600', description: 'לוח זמנים להיום ולמחר' },
   { href: 'calendar', label: 'לוח שנה', icon: Calendar, colorClass: 'bg-indigo-50 text-indigo-600', description: 'תצוגת כל הפעילות' },
   { href: 'flights', label: 'טיסות / העברות', icon: MapIcon, colorClass: 'bg-blue-50 text-blue-600', description: 'טיסות, רכבות, אוטובוסים, רכב' },
   { href: 'hotels', label: 'מלונות', icon: Hotel, colorClass: 'bg-purple-50 text-purple-600', description: 'לינה ואירוח' },
