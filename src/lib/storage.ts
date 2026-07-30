@@ -7,7 +7,7 @@
 // All public functions are async — the previous synchronous shape couldn't
 // represent network calls. Pages await them and show a small loading state.
 
-import { Trip, Flight, Hotel, Restaurant, Event, PackingItem, Photo, TripNote, TripDocument, TransportType } from './types';
+import { Trip, Flight, Hotel, Restaurant, Event, PackingItem, Photo, TripNote, TripDocument, TransportType, ActivityType } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseBrowser } from './supabase/client';
 import { isSupabaseConfigured } from './supabase/config';
@@ -143,11 +143,16 @@ const restaurantFromRow = (r: RestaurantRow): Restaurant => ({
   location: r.location ?? undefined, notes: r.notes ?? undefined, imageUrl: r.image_url ?? undefined,
 });
 
-type EventRow = RestaurantRow;
+// activity_type exists once the 2026_07_30 migration has been run. Older
+// clients / pre-migration rows return undefined/null → the UI treats both
+// as 'concert' (see activityTypeOf in lib/activityTypes.ts) — never defaulted
+// here, so we never write an implicit value back to storage.
+type EventRow = RestaurantRow & { activity_type?: string | null };
 const eventFromRow = (r: EventRow): Event => ({
   id: r.id, tripId: r.trip_id, city: r.city ?? '', name: r.name,
   date: r.date ?? '', time: r.time ?? '',
   location: r.location ?? undefined, notes: r.notes ?? undefined, imageUrl: r.image_url ?? undefined,
+  activityType: (r.activity_type as ActivityType | null | undefined) ?? undefined,
 });
 
 type PackingRow = {
@@ -564,11 +569,16 @@ export const eventsStorage = makeChildStorage<Event, Omit<Event, 'id'>>({
   lsKey: KEYS.events,
   fromRow: eventFromRow,
   contentKey: (e) => [e.tripId, e.name, e.date, e.time, e.location || ''].join('|'),
+  // activity_type is added by the 2026_07_30 migration. Strip it from the
+  // payload and retry if the column doesn't exist yet — the row is saved
+  // without it, and the UI still falls back to 'concert' for display.
+  optionalColumns: ['activity_type'],
   toRowInsert: (d, userId) => ({
     user_id: userId, trip_id: d.tripId,
     city: d.city || null, name: d.name,
     date: d.date || null, time: d.time || null,
     location: d.location || null, notes: d.notes || null, image_url: d.imageUrl || null,
+    activity_type: d.activityType || null,
   }),
   toRowUpdate: (d) => {
     const p: Record<string, unknown> = {};
@@ -579,6 +589,7 @@ export const eventsStorage = makeChildStorage<Event, Omit<Event, 'id'>>({
     if (d.location !== undefined) p.location = d.location || null;
     if (d.notes !== undefined) p.notes = d.notes || null;
     if (d.imageUrl !== undefined) p.image_url = d.imageUrl || null;
+    if (d.activityType !== undefined) p.activity_type = d.activityType || null;
     return p;
   },
 });

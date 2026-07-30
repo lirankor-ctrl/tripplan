@@ -1,9 +1,10 @@
 'use client';
 import { useRef, useState } from 'react';
-import { Event } from '@/lib/types';
+import { ActivityType, Event } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
-import { Input, Textarea } from '@/components/ui/Input';
+import { Input, Select, Textarea } from '@/components/ui/Input';
 import { ImageUploader } from '@/components/ui/ImageUploader';
+import { ACTIVITY_TYPES, ACTIVITY_TYPE_EMOJI, ACTIVITY_TYPE_LABELS } from '@/lib/activityTypes';
 
 interface EventFormProps {
   tripId: string;
@@ -24,6 +25,9 @@ export function EventForm({ tripId, initialData, tripDefaultDate, onSubmit, onCa
     location: initialData?.location || '',
     notes: initialData?.notes || '',
     imageUrl: initialData?.imageUrl || '',
+    // Legacy activities (no activityType in storage) show 'concert' (הופעה)
+    // pre-selected here, matching how they already render everywhere else.
+    activityType: initialData?.activityType ?? 'concert',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
@@ -45,6 +49,16 @@ export function EventForm({ tripId, initialData, tripDefaultDate, onSubmit, onCa
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+      <Select
+        label="סוג פעילות"
+        value={form.activityType ?? 'concert'}
+        onChange={e => set('activityType', e.target.value as ActivityType)}
+      >
+        {ACTIVITY_TYPES.map(t => (
+          <option key={t} value={t}>{ACTIVITY_TYPE_EMOJI[t]} {ACTIVITY_TYPE_LABELS[t]}</option>
+        ))}
+      </Select>
+
       <div className="grid grid-cols-2 gap-3">
         <Input label="עיר" placeholder="למשל: לונדון" value={form.city} onChange={e => set('city', e.target.value)} />
         <Input label="שם הפעילות / ההופעה" placeholder="למשל: Coldplay Concert" value={form.name} onChange={e => set('name', e.target.value)} />

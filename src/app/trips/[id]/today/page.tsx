@@ -14,37 +14,38 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardBody } from '@/components/ui/Card';
 import { TRANSPORT_ICONS, transportTypeOf } from '@/lib/transport';
-import { Sun, Hotel as HotelIcon, UtensilsCrossed, Music, FileText, Sparkles } from 'lucide-react';
+import { ACTIVITY_TYPE_ICONS, activityTypeOf } from '@/lib/activityTypes';
+import { Sun, Hotel as HotelIcon, UtensilsCrossed, FileText, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-const CATEGORY_ICONS: Partial<Record<TimelineCategory, LucideIcon>> = {
+// Icons for the categories that don't need a sub-type lookup (flight and
+// activity resolve dynamically below, via TRANSPORT_ICONS/ACTIVITY_TYPE_ICONS).
+const CATEGORY_ICONS: Partial<Record<TimelineCategory | 'document', LucideIcon>> = {
   'hotel-checkin': HotelIcon,
   'hotel-checkout': HotelIcon,
   restaurant: UtensilsCrossed,
-  activity: Music,
+  document: FileText,
 };
 
-const PREP_EMOJI: Record<string, string> = {
-  flight: '✈️',
-  'hotel-checkin': '🏨',
-  'hotel-checkout': '🏨',
-  restaurant: '🍽️',
-  activity: '🎯',
-  document: '📄',
-};
-
-function colorKeyFor(category: TimelineCategory): keyof typeof CATEGORY_COLORS {
+function colorKeyFor(category: TimelineCategory | 'document'): keyof typeof CATEGORY_COLORS {
   if (category === 'flight') return 'flight';
   if (category === 'hotel-checkin' || category === 'hotel-checkout') return 'hotel';
   if (category === 'restaurant') return 'restaurant';
-  return 'event';
+  if (category === 'activity') return 'event';
+  return 'note';
 }
 
+// Icon resolution is inlined (not a shared function) at each render site —
+// ending every branch in a direct Record[key] lookup, never a function call,
+// is required for the "no components created during render" lint rule.
+// Same convention already established in TripCalendar.tsx.
 function TimelineRow({ item }: { item: TimelineItem }) {
   const colors = CATEGORY_COLORS[colorKeyFor(item.category)];
   const Icon = item.category === 'flight'
     ? TRANSPORT_ICONS[transportTypeOf(item.transportType)]
-    : CATEGORY_ICONS[item.category]!;
+    : item.category === 'activity'
+      ? ACTIVITY_TYPE_ICONS[activityTypeOf(item.activityType)]
+      : CATEGORY_ICONS[item.category]!;
   return (
     <Card>
       <CardBody className="p-3.5 flex items-center gap-3" dir="rtl">
@@ -180,13 +181,23 @@ export default function TodayPage() {
               <FileText className="w-4 h-4 text-indigo-500" />
               מחר
             </h2>
-            <ul className="space-y-2">
-              {tomorrowItems.map(item => (
-                <li key={item.id} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="mt-0.5 flex-shrink-0">{PREP_EMOJI[item.category]}</span>
-                  <span>{item.text}</span>
-                </li>
-              ))}
+            <ul className="space-y-2.5">
+              {tomorrowItems.map(item => {
+                const colors = CATEGORY_COLORS[colorKeyFor(item.category)];
+                const Icon = item.category === 'flight'
+                  ? TRANSPORT_ICONS[transportTypeOf(item.transportType)]
+                  : item.category === 'activity'
+                    ? ACTIVITY_TYPE_ICONS[activityTypeOf(item.activityType)]
+                    : CATEGORY_ICONS[item.category]!;
+                return (
+                  <li key={item.id} className="flex items-start gap-2.5 text-sm text-gray-600">
+                    <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0', colors.bg)}>
+                      <Icon className={cn('w-3.5 h-3.5', colors.text)} />
+                    </div>
+                    <span className="pt-0.5">{item.text}</span>
+                  </li>
+                );
+              })}
             </ul>
           </CardBody>
         </Card>

@@ -54,6 +54,11 @@ export interface Restaurant {
   imageUrl?: string;
 }
 
+export type ActivityType =
+  | 'concert' | 'play' | 'museum' | 'amusement_park' | 'nature_park' | 'beach'
+  | 'trip' | 'guided_tour' | 'shopping' | 'winery' | 'culinary' | 'exhibition'
+  | 'sports_event' | 'festival' | 'other';
+
 export interface Event {
   id: string;
   tripId: string;
@@ -64,6 +69,9 @@ export interface Event {
   location?: string;
   notes?: string;
   imageUrl?: string;
+  // Optional: rows from before this feature, or from older clients, won't
+  // have it. The UI must always treat undefined/null as 'concert' (הופעה).
+  activityType?: ActivityType;
 }
 
 export interface PackingItem {
@@ -124,6 +132,9 @@ export interface CalendarEvent {
   // Only set when type === 'flight' — the calendar uses it to pick the right
   // mode-of-transport icon (plane / train / bus / car / map).
   transportType?: TransportType;
+  // Only set when type === 'event' — the calendar uses it to pick the right
+  // activity-category icon (concert / museum / hike / ...).
+  activityType?: ActivityType;
   time?: string;
   details?: string;
   sourceId: string;

@@ -3,7 +3,7 @@
 // scoped to a single day. No storage access here — callers pass in data
 // already fetched via the existing storage layer.
 
-import { Event, Flight, Hotel, Restaurant, TransportType, TripDocument, DocumentCategory } from './types';
+import { ActivityType, Event, Flight, Hotel, Restaurant, TransportType, TripDocument, DocumentCategory } from './types';
 
 export type TimelineCategory = 'flight' | 'hotel-checkin' | 'hotel-checkout' | 'restaurant' | 'activity';
 
@@ -12,6 +12,7 @@ export interface TimelineItem {
   time?: string;
   category: TimelineCategory;
   transportType?: TransportType;
+  activityType?: ActivityType;
   title: string;
   subtitle?: string;
 }
@@ -76,6 +77,7 @@ export function buildDayTimeline(
       id: e.id,
       time: e.time || undefined,
       category: 'activity',
+      activityType: e.activityType,
       title: e.name,
       subtitle: [e.city, e.location].filter(Boolean).join(' · ') || undefined,
     });
@@ -102,6 +104,8 @@ export interface PrepItem {
   id: string;
   text: string;
   category: TimelineCategory | 'document';
+  transportType?: TransportType;
+  activityType?: ActivityType;
 }
 
 // Categories relevant to a travel day, inferred purely from what's already
@@ -139,6 +143,7 @@ export function buildTomorrowPrep(
         items.push({
           id: item.id,
           category: 'flight',
+          transportType: item.transportType,
           text: item.time ? `טיסה מחר ב-${item.time}: ${item.title}` : `טיסה מחר: ${item.title}`,
         });
         break;
@@ -159,6 +164,7 @@ export function buildTomorrowPrep(
         items.push({
           id: item.id,
           category: 'activity',
+          activityType: item.activityType,
           text: item.time ? `${item.title} מחר ב-${item.time}` : `${item.title} מחר`,
         });
         break;

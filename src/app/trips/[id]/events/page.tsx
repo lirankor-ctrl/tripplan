@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { EventForm } from '@/components/events/EventForm';
 import { Plus, Music, Pencil, Trash2, MapPin, Clock, ExternalLink } from 'lucide-react';
+import { activityTypeIcon, activityTypeLabel } from '@/lib/activityTypes';
 
 export default function EventsPage() {
   const { id } = useParams<{ id: string }>();
@@ -88,7 +89,9 @@ export default function EventsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sortedEvents.map(evt => (
+          {sortedEvents.map(evt => {
+            const ActivityIcon = activityTypeIcon(evt.activityType);
+            return (
             <Card key={evt.id} className="overflow-hidden">
               {evt.imageUrl && (
                 <div className="h-36 overflow-hidden">
@@ -99,11 +102,16 @@ export default function EventsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                      <Music className="w-5 h-5 text-orange-500" />
+                      <ActivityIcon className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{evt.name}</h3>
-                      {evt.city && <p className="text-sm text-gray-500">{evt.city}</p>}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {evt.city && <p className="text-sm text-gray-500">{evt.city}</p>}
+                        <span className="text-xs font-medium text-orange-600 bg-orange-50 rounded-full px-2 py-0.5">
+                          {activityTypeLabel(evt.activityType)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
@@ -138,7 +146,8 @@ export default function EventsPage() {
                 {evt.notes && <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mt-3">{evt.notes}</p>}
               </CardBody>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
